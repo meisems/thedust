@@ -1,28 +1,35 @@
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { WagmiProvider, useAccount, useBalance, useConnect, useDisconnect, usePublicClient, useReadContract, useSwitchChain, useWalletClient } from "wagmi";
-import { formatEther } from "viem";
+import { WagmiProvider, useConnect, usePublicClient, useSwitchChain, useWalletClient } from "wagmi";
 import { injected } from "wagmi/connectors";
-
+import { AnimatePresence, motion } from "framer-motion";
 import { wagmiConfig } from "./lib/wagmi";
-import {
-  ADDRESSES, erc20Abi, explorerAddress, fmtUsd, MIN_HOLDING_TIER, PRICES, robinhoodChain, shortAddr,
-} from "./lib/chain";
+import { ADDRESSES, erc20Abi, EXPLORER_URL, MIN_HOLDING_TIER, MIN_HOLDING_TIER_FMT, PRICES, robinhoodChain } from "./lib/chain";
 import { DEMO_VIP_SWEEP_BALANCE, DEMO_WALLET } from "./lib/demo";
 import { useDustTokens, type Mode } from "./hooks/useDustTokens";
 import { useSweepQueue, type Destination } from "./hooks/useSweepQueue";
-
-import { ToastProvider, useToasts } from "./components/Toasts";
-import { Header, Ticker, ConnectModal } from "./components/Header";
+import { Header } from "./components/Header";
 import { StatsBanner } from "./components/StatsBanner";
 import { DestinationSelector } from "./components/DestinationSelector";
 import { DustTable } from "./components/DustTable";
-import { SweepConsole, type ActivityEntry } from "./components/SweepConsole";
+import { SweepConsole, type FeedItem } from "./components/SweepConsole";
 import { ExecutionModal } from "./components/ExecutionModal";
-import { Reveal } from "./components/ui";
-import { CopyIcon, ExtIcon, BroomIcon } from "./components/icons";
+import { ToastProvider, useToast } from "./components/Toasts";
+import { Loader } from "./components/Loader";
+import { spring } from "./components/ui";
+import { AlertIcon, ShieldIcon, SparkIcon, WalletIcon } from "./components/icons";
 
 const queryClient = new QueryClient();
+
+const MARQUEE = [
+  "dust is just money you forgot about",
+  "the average ape wallet hides 10+ tokens worth under $5",
+  "sweeping to $SWEEP is 0% fee — forever, obviously",
+  "gas on chain 4663 costs less than a gumball",
+  "burned tokens live at 0x…dEaD. visit them sometime",
+  "your bags are smaller than you remember",
+  "one broom. three exits. zero contracts",
+];
 
 export default function App() {
   return (
@@ -37,402 +44,418 @@ export default function App() {
 }
 
 /* ================================================================== */
-/*  Shell — all state orchestration                                    */
-/* ================================================================== */
 
 function Shell() {
-  const { push } = useToasts();
-
-  /* ---------- wallet (wagmi) ---------- */
-  const { address: liveAddress, chainId, isConnected } = useAccount();
+  const toast = useToast();
   const { connectAsync } = useConnect();
-  const { disconnect } = useDisconnect();
-  const { switchChain } = useSwitchChain();
+  const { switchChainAsync } = useSwitchChain();
   const publicClient = usePublicClient({ chainId: robinhoodChain.id });
   const { data: walletClient } = useWalletClient();
 
-  const [mode, setMode] = useState<Mode | null>(null);
+  /* ------------------------------ ui state ------------------------------ */
+  const [loaderDone, setLoaderDone] = useState(false);
+  const [theme, setTheme] = useState<string>(() => document.documentElement.dataset.theme ?? "light");
+  const [walletOpen, setWalletOpen] = useState(false);
   const [connecting, setConnecting] = useState(false);
-  const [connectOpen, setConnectOpen] = useState(false);
-  const [demoVip, setDemoVip] = useState(false);
+  const [chainMismatch, setChainMismatch] = useState(false);
+  const [mode, setMode] = useState<Mode | null>(null);
+  const [address, setAddress] = useState<string | null>(null);
+  const [richDemo, setRichDemo] = useState(false);
+  const [destination, setDestination] = useState<Destination>("sweep");
+  const [selection, setSelection] = useState<Set<string>>(new Set());
+  const [modalOpen, setModalOpen] = useState(false);
+  const [session, setSession] = useState({ usd: 0, count: 0 });
+  const [feed, setFeed] = useState<FeedItem[]>([]);
+  const [liveSweep, setLiveSweep] = useState(0);
 
-  /* if the injected wallet drops, fall back to idle */
-  useEffect(() => {
-    if (mode === "live" && !isConnected) setMode(null);
-  }, [mode, isConnected]);
-
-  /* live $SWEEP balance (token gate) */
-  const { data: sweepBalRaw } = useReadContract({
-    address: ADDRESSES.platformToken as `0x${string}`,
-    abi: erc20Abi,
-    functionName: "balanceOf",
-    args: [(liveAddress ?? "0x0000000000000000000000000000000000000000") as `0x${string}`],
-    query: { enabled: mode === "live" && !!liveAddress },
-  });
-
-  /* live native balance */
-  const { data: nativeBal } = useBalance({
-    address: liveAddress,
-    query: { enabled: mode === "live" && !!liveAddress },
-  });
-
-  const address = mode === "demo" ? DEMO_WALLET.address : mode === "live" ? (liveAddress ?? null) : null;
-  const sweepBalance =
-    mode === "demo" ? (demoVip ? DEMO_VIP_SWEEP_BALANCE : DEMO_WALLET.sweepBalance)
-    : Number(sweepBalRaw ?? 0n) / 1e18;
-  const nativeBalance = mode === "demo" ? DEMO_WALLET.nativeBalance : Number(formatEther(nativeBal?.value ?? 0n));
+  /* ------------------------------ data ------------------------------ */
+  const dust = useDustTokens({ address, mode });
+  const sweepBalance = mode === "demo" ? (richDemo ? DEMO_VIP_SWEEP_BALANCE : DEMO_WALLET.sweepBalance) : liveSweep;
   const isVip = sweepBalance >= Number(MIN_HOLDING_TIER);
-  const tierProgress = Math.min(1, sweepBalance / Number(MIN_HOLDING_TIER));
-  const chainMismatch = mode === "live" && !!chainId && chainId !== robinhoodChain.id;
 
-  /* ---------- connect flows ---------- */
-  const connectLive = useCallback(async () => {
+  const queue = useSweepQueue({ mode, address, isVip, destination, publicClient, walletClient });
+
+  /* live VIP read — platformToken.balanceOf */
+  useEffect(() => {
+    if (mode !== "live" || !publicClient || !address) return;
+    let on = true;
+    publicClient
+      .readContract({
+        address: ADDRESSES.platformToken as `0x${string}`,
+        abi: erc20Abi,
+        functionName: "balanceOf",
+        args: [address as `0x${string}`],
+      })
+      .then((b) => on && setLiveSweep(Number(b as bigint) / 1e18))
+      .catch(() => {});
+    return () => {
+      on = false;
+    };
+  }, [mode, publicClient, address]);
+
+  /* ------------------------------ theme ------------------------------ */
+  const toggleTheme = () => {
+    const next = theme === "light" ? "dark" : "light";
+    setTheme(next);
+    document.documentElement.dataset.theme = next;
+    document.documentElement.style.backgroundColor = next === "dark" ? "#131318" : "#faf9f7";
+    try {
+      localStorage.setItem("ds-theme", next);
+    } catch {}
+    document.documentElement.classList.add("theme-anim");
+    window.setTimeout(() => document.documentElement.classList.remove("theme-anim"), 520);
+  };
+
+  /* ------------------------------ wallets ------------------------------ */
+  const connectDemo = () => {
+    setMode("demo");
+    setAddress(DEMO_WALLET.address);
+    setWalletOpen(false);
+    toast("ok", "demo wallet attached", "fake money, real emotional growth.");
+  };
+
+  const connectLive = async () => {
     setConnecting(true);
+    setChainMismatch(false);
     try {
       const res = await connectAsync({ connector: injected() });
-      setMode("live");
-      setConnectOpen(false);
-      push({ kind: "success", title: "Wallet connected", desc: `Live on ${shortAddr(res.accounts[0] ?? "")} — scanning Robinhood Chain…` });
       if (res.chainId !== robinhoodChain.id) {
-        try { await switchChain({ chainId: robinhoodChain.id }); } catch { /* user may approve later */ }
+        try {
+          await switchChainAsync({ chainId: robinhoodChain.id });
+        } catch {
+          setChainMismatch(true);
+          setConnecting(false);
+          return;
+        }
       }
+      setMode("live");
+      setAddress(res.accounts[0]);
+      setWalletOpen(false);
+      toast("ok", "wallet attached", `chain 4663 · ${res.accounts[0].slice(0, 8)}…`);
     } catch (e: any) {
-      const msg = String(e?.message ?? "");
-      push({
-        kind: "error",
-        title: "No injected wallet found",
-        desc: msg.includes("Connector not found") || msg.includes("injected")
-          ? "Install MetaMask / Rabby, or launch the Demo Wallet to explore."
-          : msg.slice(0, 140),
-      });
+      toast("err", "connection refused", e?.message?.slice(0, 90) ?? "the wallet said no. rude.");
     } finally {
       setConnecting(false);
     }
-  }, [connectAsync, push, switchChain]);
+  };
 
-  const connectDemo = useCallback(() => {
-    setMode("demo");
-    setDemoVip(false);
-    setConnectOpen(false);
-    push({
-      kind: "info",
-      title: "Demo wallet attached",
-      desc: `${shortAddr(DEMO_WALLET.address)} · 15 dusty positions loaded · execution simulated`,
-    });
-  }, [push]);
-
-  const disconnectAll = useCallback(() => {
-    if (mode === "live") disconnect();
+  const disconnect = () => {
     setMode(null);
-    setSelected(new Set());
-    push({ kind: "info", title: "Disconnected", desc: "Scanner idle — dust state cleared." });
-  }, [mode, disconnect, push]);
+    setAddress(null);
+    setSelection(new Set());
+    setRichDemo(false);
+    toast("info", "wallet detached", "the dust remains. it always does.");
+  };
 
-  /* ---------- dust indexing ---------- */
-  const dust = useDustTokens({ address, mode });
-
-  /* ---------- destination + selection ---------- */
-  const [destination, setDestination] = useState<Destination>("sweep");
-  const [selected, setSelected] = useState<Set<string>>(new Set());
-  const [modalOpen, setModalOpen] = useState(false);
-  const [activity, setActivity] = useState<ActivityEntry[]>([]);
-
-  const eligibleSelected = useMemo(
-    () => dust.tokens.filter((t) => selected.has(t.address) && (destination === "burn" ? t.kind === "dead" : t.kind === "liquid")),
-    [dust.tokens, selected, destination]
+  /* ------------------------------ selection ------------------------------ */
+  const rawSelected = useMemo(() => dust.tokens.filter((t) => selection.has(t.address)), [dust.tokens, selection]);
+  const selectedTokens = useMemo(
+    () => (destination === "burn" ? rawSelected.filter((t) => t.kind === "dead") : rawSelected.filter((t) => t.kind === "liquid")),
+    [rawSelected, destination]
   );
+  const mismatchCount = rawSelected.length - selectedTokens.length;
 
-  /* prune selection when route/filter changes */
-  useEffect(() => {
-    setSelected((prev) => {
-      const keep = new Set(
-        dust.tokens
-          .filter((t) => prev.has(t.address) && (destination === "burn" ? t.kind === "dead" : t.kind === "liquid"))
-          .map((t) => t.address)
-      );
-      return keep.size === prev.size ? prev : keep;
-    });
-  }, [destination, dust.tokens]);
-
-  const toggle = useCallback((addr: string) => {
-    setSelected((prev) => {
+  const toggleOne = (addr: string) =>
+    setSelection((prev) => {
       const next = new Set(prev);
       if (next.has(addr)) next.delete(addr);
       else next.add(addr);
       return next;
     });
-  }, []);
 
-  const setAll = useCallback((addrs: string[], on: boolean) => {
-    setSelected((prev) => {
+  const toggleAll = () =>
+    setSelection((prev) => {
+      const all = dust.tokens.every((t) => prev.has(t.address));
+      return all ? new Set<string>() : new Set(dust.tokens.map((t) => t.address));
+    });
+
+  /* ------------------------------ sweep ------------------------------ */
+  const onSweep = () => {
+    if (selectedTokens.length === 0 || queue.running) return;
+    setModalOpen(true);
+    queue.start(selectedTokens, destination, isVip);
+  };
+
+  /* queue finished → session, feed, toasts, prune, rescan */
+  const handledRef = useRef<unknown>(null);
+  useEffect(() => {
+    if (!queue.finished || queue.steps.length === 0 || handledRef.current === queue.steps) return;
+    handledRef.current = queue.steps;
+    const s = queue.summary;
+    const destLabel = destination === "sweep" ? "$SWEEP" : destination === "eth" ? "ETH" : "the void";
+    setSession((prev) => ({ usd: prev.usd + s.usdSwept, count: prev.count + s.confirmed }));
+    setFeed((prev) =>
+      [
+        {
+          id: Date.now(),
+          ok: s.failed === 0,
+          text: s.failed === 0 ? `swept ${s.confirmed} → ${destLabel} (+$${s.usdSwept.toFixed(2)})` : `${s.confirmed} swept · ${s.failed} resisted`,
+          time: new Date().toLocaleTimeString("en-US", { hour12: false }),
+        },
+        ...prev,
+      ].slice(0, 6)
+    );
+    setSelection((prev) => {
       const next = new Set(prev);
-      addrs.forEach((a) => (on ? next.add(a) : next.delete(a)));
+      queue.steps.filter((st) => st.status === "confirmed").forEach((st) => next.delete(st.tokenAddress));
       return next;
     });
-  }, []);
-
-  /* ---------- sweep queue ---------- */
-  const queue = useSweepQueue({
-    mode,
-    address,
-    isVip,
-    destination,
-    publicClient,
-    walletClient,
-  });
-
-  const startSweep = useCallback(() => {
-    if (eligibleSelected.length === 0 || queue.running) return;
-    setModalOpen(true);
-    queue.start(eligibleSelected, destination, isVip);
-    push({
-      kind: "info",
-      title: "Sweep queue started",
-      desc: `${eligibleSelected.length} token${eligibleSelected.length > 1 ? "s" : ""} → ${destination === "sweep" ? "$SWEEP" : destination === "eth" ? "ETH" : "burn"} · sequential execution, no nonce collisions`,
-    });
-  }, [eligibleSelected, destination, isVip, queue, push]);
-
-  /* on finish → log activity + toast (once per run) */
-  const finishedRef = useRef(false);
-  useEffect(() => {
-    if (queue.finished && !finishedRef.current && queue.steps.length > 0) {
-      finishedRef.current = true;
-      const s = queue.summary;
-      setActivity((prev) =>
-        [
-          {
-            id: Date.now(),
-            time: new Date().toLocaleTimeString("en-US", { hour12: false }),
-            dest: destination,
-            count: s.confirmed,
-            usd: s.usdSwept,
-          },
-          ...prev,
-        ].slice(0, 5)
-      );
-      if (s.failed > 0) {
-        push({ kind: "error", title: `${s.failed} position${s.failed > 1 ? "s" : ""} failed to sweep`, desc: `${s.failedSymbols.join(", ")} — retry from the queue panel.` });
-      } else if (s.confirmed > 0) {
-        push({ kind: "success", title: "Sweep complete", desc: `${s.confirmed} token${s.confirmed > 1 ? "s" : ""} swept · ${fmtUsd(s.usdSwept)} ${destination === "burn" ? "purged" : "recovered"}` });
-      }
+    if (s.failed === 0 && s.confirmed > 0) {
+      toast("ok", destination === "burn" ? "sent to the void." : "dust consolidated.", `${s.confirmed} token${s.confirmed > 1 ? "s" : ""} · +$${s.usdSwept.toFixed(2)} in ${destLabel}. you're welcome.`);
+    } else if (s.failed > 0) {
+      toast("warn", `${s.failed} token${s.failed > 1 ? "s" : ""} resisted.`, "retry from the modal. they tire eventually.");
     }
-    if (!queue.finished) finishedRef.current = false;
-  }, [queue.finished, queue.summary, queue.steps.length, destination, push]);
+    if (s.confirmed > 0) dust.refresh();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [queue.finished]);
 
-  const closeModal = useCallback(() => {
-    setModalOpen(false);
-    if (queue.finished) {
-      queue.reset();
-      setSelected(new Set());
-      dust.refresh();
-    }
-  }, [queue, dust]);
+  /* ------------------------------ ambient motes ------------------------------ */
+  const motes = useMemo(
+    () =>
+      Array.from({ length: 14 }, (_, i) => ({
+        id: i,
+        left: `${(i * 71 + 13) % 100}%`,
+        size: 3 + ((i * 7) % 5),
+        d: `${16 + ((i * 5) % 14)}s`,
+        dl: `${-((i * 3.7) % 20)}s`,
+        x: `${((i % 5) - 2) * 22}px`,
+        o: 0.1 + ((i * 13) % 10) / 70,
+      })),
+    []
+  );
 
-  /* ---------- derived for banner ---------- */
-  const gasUsdAll =
-    dust.allDust.length > 0
-      ? (dust.allDust.length + dust.liquid.filter((t) => !t.preApproved).length + (!isVip ? dust.liquid.length : 0)) *
-        PRICES.gasPerTx * PRICES.ETH
-      : 0;
+  const gasUsdAll = dust.allDust.length * 2.5 * PRICES.gasPerTx * PRICES.ETH;
+
+  /* ================================================================== */
 
   return (
     <div className="relative min-h-screen">
-      {/* ambient layers */}
-      <div className="pointer-events-none fixed inset-0 z-0 bg-glow-layer" aria-hidden />
-      <div className="pointer-events-none fixed inset-0 z-0 bg-grid-layer" aria-hidden />
-
-      <div className="relative z-10">
-        <Ticker tokens={mode ? dust.allDust : []} />
-        <Header
-          mode={mode}
-          address={address}
-          sweepBalance={sweepBalance}
-          nativeBalance={nativeBalance}
-          isVip={isVip}
-          tierProgress={tierProgress}
-          connecting={connecting}
-          chainMismatch={chainMismatch}
-          onOpenConnect={() => setConnectOpen(true)}
-          onDisconnect={disconnectAll}
-          onSwitchChain={() => switchChain({ chainId: robinhoodChain.id })}
+      {/* ambient background — soft tints + drifting dust motes */}
+      <div className="pointer-events-none fixed inset-0 z-0 overflow-hidden">
+        <div
+          className="absolute -left-32 -top-32 h-[480px] w-[480px] rounded-full"
+          style={{ background: "var(--acc-soft)", filter: "blur(90px)", opacity: 0.55 }}
         />
-
-        <main className="mx-auto max-w-7xl px-4 pb-16 pt-6 sm:px-6">
-          {/* 01 · readout */}
-          <Reveal>
-            <StatsBanner
-              totalUsd={dust.totalUsd}
-              tokenCount={dust.allDust.length}
-              liquidUsd={dust.liquidUsd}
-              deadCount={dust.dead.length}
-              gasUsdAll={gasUsdAll}
-              ignoredCount={dust.ignoredCount}
-              loading={dust.loading}
-              lastScan={dust.lastScan}
-              connected={!!address}
-            />
-          </Reveal>
-
-          <div className="mt-6 grid grid-cols-1 gap-6 lg:grid-cols-[minmax(0,1fr)_360px]">
-            {/* left rail */}
-            <div className="min-w-0 space-y-6">
-              <Reveal delay={80}>
-                <DestinationSelector
-                  value={destination}
-                  onChange={setDestination}
-                  isVip={isVip}
-                  disabled={queue.running}
-                />
-              </Reveal>
-              <Reveal delay={140}>
-                <DustTable
-                  tokens={dust.tokens}
-                  loading={dust.loading}
-                  error={dust.error}
-                  connected={!!address}
-                  destination={destination}
-                  selected={selected}
-                  cutoff={dust.cutoff}
-                  filter={dust.filter}
-                  ignoredCount={dust.ignoredCount}
-                  onToggle={toggle}
-                  onSetAll={setAll}
-                  setCutoff={dust.setCutoff}
-                  setFilter={dust.setFilter}
-                  onRetry={dust.refresh}
-                  onConnect={() => setConnectOpen(true)}
-                />
-              </Reveal>
-            </div>
-
-            {/* right rail */}
-            <Reveal delay={200}>
-              <SweepConsole
-                destination={destination}
-                isVip={isVip}
-                demoMode={mode === "demo"}
-                demoVip={demoVip}
-                onToggleDemoVip={setDemoVip}
-                sweepBalance={sweepBalance}
-                selectedTokens={eligibleSelected}
-                running={queue.running}
-                onSweep={startSweep}
-                onJumpToDest={setDestination}
-                activity={activity}
-              />
-            </Reveal>
-          </div>
-        </main>
-
-        <Footer onCopy={(label, val) => copyToClipboard(label, val, push)} />
+        <div
+          className="absolute -right-40 top-1/3 h-[420px] w-[420px] rounded-full"
+          style={{ background: "var(--gold-soft)", filter: "blur(100px)", opacity: 0.5 }}
+        />
+        {motes.map((m) => (
+          <span
+            key={m.id}
+            className="mote"
+            style={{
+              left: m.left,
+              width: m.size,
+              height: m.size,
+              ["--d" as string]: m.d,
+              ["--dl" as string]: m.dl,
+              ["--x" as string]: m.x,
+              ["--o" as string]: m.o,
+            }}
+          />
+        ))}
       </div>
 
-      <ConnectModal
-        open={connectOpen}
-        onClose={() => setConnectOpen(false)}
-        onDemo={connectDemo}
-        onLive={connectLive}
-        connecting={connecting}
+      {!loaderDone && <Loader onDone={() => setLoaderDone(true)} />}
+
+      <Header
+        theme={theme}
+        onToggleTheme={toggleTheme}
+        address={address}
+        mode={mode}
+        isVip={isVip}
+        onOpenWallet={() => setWalletOpen(true)}
+        onDisconnect={disconnect}
       />
+
+      {/* deadpan ticker */}
+      <div className="relative z-10 overflow-hidden border-b py-2.5" style={{ borderColor: "var(--line)", background: "var(--card-soft)", backdropFilter: "blur(10px)" }}>
+        <div className="marquee-track flex w-max items-center gap-8">
+          {[...MARQUEE, ...MARQUEE].map((m, i) => (
+            <span key={i} className="flex items-center gap-8 font-mono text-[11px] text-muted">
+              {m} <span className="text-faint">·</span>
+            </span>
+          ))}
+        </div>
+      </div>
+
+      <motion.main
+        className="relative z-10 mx-auto max-w-6xl px-4 pb-16 pt-8 sm:px-6"
+        initial={{ opacity: 0, y: 24 }}
+        animate={loaderDone ? { opacity: 1, y: 0 } : {}}
+        transition={{ ...spring, delay: 0.15 }}
+      >
+        <StatsBanner
+          totalUsd={dust.totalUsd}
+          tokenCount={dust.allDust.length}
+          liquidUsd={dust.liquidUsd}
+          deadCount={dust.dead.length}
+          gasUsdAll={gasUsdAll}
+          ignoredCount={dust.ignoredCount}
+          loading={dust.loading}
+          lastScan={dust.lastScan}
+          connected={!!address}
+          onAttach={() => setWalletOpen(true)}
+        />
+
+        <div className="mt-6 grid items-start gap-6 lg:grid-cols-[minmax(0,1fr)_360px]">
+          <div className="min-w-0 space-y-6">
+            <DestinationSelector
+              destination={destination}
+              setDestination={setDestination}
+              isVip={isVip}
+              minTierLabel={MIN_HOLDING_TIER_FMT}
+              disabled={queue.running}
+            />
+            <DustTable
+              tokens={dust.tokens}
+              allCount={dust.allDust.length}
+              deadCount={dust.dead.length}
+              loading={dust.loading}
+              error={dust.error}
+              connected={!!address}
+              refresh={dust.refresh}
+              cutoff={dust.cutoff}
+              setCutoff={dust.setCutoff}
+              filter={dust.filter}
+              setFilter={dust.setFilter}
+              selection={selection}
+              onToggle={toggleOne}
+              onToggleAll={toggleAll}
+              ignoredCount={dust.ignoredCount}
+              ignoredLabel={dust.ignoredDemo.symbol}
+            />
+          </div>
+
+          <div className="lg:sticky lg:top-24">
+            <SweepConsole
+              selectedTokens={selectedTokens}
+              mismatchCount={mismatchCount}
+              destination={destination}
+              isVip={isVip}
+              sweepBalance={sweepBalance}
+              demoMode={mode === "demo"}
+              richDemo={richDemo}
+              onToggleRichDemo={() => setRichDemo((r) => !r)}
+              onSweep={onSweep}
+              running={queue.running}
+              session={session}
+              feed={feed}
+              minTierLabel={MIN_HOLDING_TIER_FMT}
+            />
+          </div>
+        </div>
+
+        {/* footer */}
+        <footer className="mt-14 flex flex-wrap items-center justify-between gap-3 border-t pt-6" style={{ borderColor: "var(--line)" }}>
+          <p className="font-mono text-[11px] text-faint">dustsweep — a broom for your blockchain regrets.</p>
+          <div className="flex items-center gap-4 font-mono text-[11px]">
+            <a className="text-muted transition-colors hover:text-ink" href={EXPLORER_URL} target="_blank" rel="noreferrer">
+              blockscout
+            </a>
+            <a className="text-muted transition-colors hover:text-ink" href={`${EXPLORER_URL}/address/${ADDRESSES.dexRouter}`} target="_blank" rel="noreferrer">
+              router
+            </a>
+            <span className="text-faint">chain 4663 · no contracts · no custody</span>
+          </div>
+        </footer>
+      </motion.main>
 
       <ExecutionModal
         open={modalOpen}
-        mode={mode}
+        onClose={() => setModalOpen(false)}
         steps={queue.steps}
+        progress={queue.progress}
         running={queue.running}
         finished={queue.finished}
-        progress={queue.progress}
-        destination={destination}
         summary={queue.summary}
-        onClose={closeModal}
+        destination={destination}
+        address={address}
         onAbort={queue.abort}
         onRetry={queue.retryFailed}
       />
+
+      {/* wallet sheet */}
+      <AnimatePresence>
+        {walletOpen && (
+          <motion.div className="fixed inset-0 z-[100] flex items-end justify-center p-4 sm:items-center" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}>
+            <div className="absolute inset-0" style={{ background: "rgba(20,20,24,0.4)", backdropFilter: "blur(8px)", WebkitBackdropFilter: "blur(8px)" }} onClick={() => setWalletOpen(false)} />
+            <motion.div
+              initial={{ opacity: 0, y: 60, scale: 0.96 }}
+              animate={{ opacity: 1, y: 0, scale: 1 }}
+              exit={{ opacity: 0, y: 40, scale: 0.97 }}
+              transition={spring}
+              className="card relative w-full max-w-md overflow-hidden rounded-[1.75rem] p-6"
+            >
+              <h2 className="font-display text-xl font-bold tracking-tight text-ink">attach a wallet</h2>
+              <p className="mt-1 text-[13px] text-muted">two doors. same broom.</p>
+
+              <div className="mt-5 space-y-2.5">
+                <WalletOption
+                  icon={<SparkIcon size={19} />}
+                  bg="var(--gold-soft)"
+                  fg="var(--gold-ink)"
+                  title="demo wallet"
+                  sub="instant · fake money · zero shame"
+                  onClick={connectDemo}
+                />
+                <WalletOption
+                  icon={<WalletIcon size={19} />}
+                  bg="var(--sky-soft)"
+                  fg="var(--sky-ink)"
+                  title="browser wallet"
+                  sub={connecting ? "asked nicely… check the popup" : "must be on robinhood chain · 4663"}
+                  onClick={connectLive}
+                  busy={connecting}
+                />
+              </div>
+
+              {chainMismatch && (
+                <p className="mt-4 flex items-start gap-2 rounded-2xl px-4 py-3 text-xs leading-snug" style={{ background: "var(--coral-soft)", color: "var(--coral-ink)" }}>
+                  <AlertIcon size={15} className="mt-0.5 shrink-0" />
+                  wrong chain in there. switch your wallet to Robinhood Chain (4663) and try again.
+                </p>
+              )}
+
+              <p className="mt-5 flex items-center justify-center gap-1.5 border-t pt-4 font-mono text-[10px] uppercase tracking-[0.14em] text-faint" style={{ borderColor: "var(--line)" }}>
+                <ShieldIcon size={12} /> no custody · we just point at the router
+              </p>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
     </div>
   );
 }
 
-function copyToClipboard(label: string, value: string, push: (t: any) => void) {
-  navigator.clipboard?.writeText(value).then(
-    () => push({ kind: "success", title: `${label} copied`, desc: shortAddr(value) }),
-    () => push({ kind: "error", title: "Clipboard unavailable" })
-  );
-}
-
-/* ================================================================== */
-/*  Footer — contracts, network, fine print                            */
-/* ================================================================== */
-
-function Footer({ onCopy }: { onCopy: (label: string, val: string) => void }) {
-  const contracts = [
-    { label: "DEX V2 Router", value: ADDRESSES.dexRouter },
-    { label: "WETH", value: ADDRESSES.weth },
-    { label: "$SWEEP Token", value: ADDRESSES.platformToken },
-    { label: "Burn Address", value: ADDRESSES.dead },
-  ];
+function WalletOption({ icon, bg, fg, title, sub, onClick, busy }: { icon: React.ReactNode; bg: string; fg: string; title: string; sub: string; onClick: () => void; busy?: boolean }) {
   return (
-    <footer className="relative z-10 border-t border-ink-600 bg-ink-950/70">
-      <div className="mx-auto grid max-w-7xl grid-cols-1 gap-8 px-4 py-10 sm:px-6 md:grid-cols-3">
-        <div>
-          <div className="flex items-center gap-2">
-            <BroomIcon size={16} className="text-hood-400" />
-            <span className="font-display text-[13px] font-bold tracking-[0.1em] text-mist-100">
-              DUST<span className="text-hood-400">SWEEP</span>
-            </span>
-          </div>
-          <p className="mt-3 max-w-xs text-[12px] leading-relaxed text-mist-500">
-            Serverless dust consolidation for Robinhood Chain. Zero custom contracts — only ERC-20 transfers and the
-            deployed Uniswap V2 router. All logic runs client-side against public RPC + Blockscout.
-          </p>
-        </div>
-
-        <div>
-          <h4 className="font-mono text-[10px] uppercase tracking-[0.24em] text-mist-600">Key addresses</h4>
-          <ul className="mt-3 space-y-2">
-            {contracts.map((c) => (
-              <li key={c.label} className="flex items-center justify-between gap-3">
-                <span className="font-mono text-[11px] text-mist-500">{c.label}</span>
-                <span className="flex items-center gap-1.5">
-                  <a
-                    href={explorerAddress(c.value)}
-                    target="_blank"
-                    rel="noreferrer"
-                    className="font-mono text-[11px] text-mist-300 transition-colors hover:text-hood-400"
-                  >
-                    {shortAddr(c.value)}
-                  </a>
-                  <ExtIcon size={10} className="text-mist-600" />
-                  <button onClick={() => onCopy(c.label, c.value)} className="text-mist-600 transition-colors hover:text-hood-400" aria-label={`Copy ${c.label}`}>
-                    <CopyIcon size={12} />
-                  </button>
-                </span>
-              </li>
-            ))}
-          </ul>
-        </div>
-
-        <div>
-          <h4 className="font-mono text-[10px] uppercase tracking-[0.24em] text-mist-600">Network</h4>
-          <ul className="mt-3 space-y-1.5 font-mono text-[11px] text-mist-500">
-            <li>Chain ID <span className="text-mist-300">4663</span> · hex <span className="text-mist-300">0x1237</span></li>
-            <li>Native <span className="text-mist-300">ETH (18 dec)</span></li>
-            <li className="break-all">RPC <span className="text-mist-300">rpc.mainnet.chain.robinhood.com</span></li>
-            <li>
-              Explorer{" "}
-              <a href="https://robinhoodchain.blockscout.com" target="_blank" rel="noreferrer" className="text-hood-400 hover:underline">
-                robinhoodchain.blockscout.com
-              </a>
-            </li>
-          </ul>
-          <p className="mt-4 rounded-md border border-ink-700 bg-ink-850/60 px-3 py-2 font-mono text-[10px] leading-relaxed text-mist-600">
-            ⚠ Swaps execute with a 15% slippage guard and fee-on-transfer routing. Dust is volatile; recoverable value is
-            an estimate, not a quote. Demo mode simulates execution end-to-end.
-          </p>
-        </div>
-      </div>
-      <div className="border-t border-ink-700 py-4 text-center font-mono text-[10px] tracking-wider text-mist-600">
-        DUSTSWEEP · built for the apes of Chain 4663 · no contracts deployed, no keys held
-      </div>
-    </footer>
+    <motion.button
+      type="button"
+      onClick={onClick}
+      disabled={busy}
+      whileHover={busy ? undefined : { scale: 1.015 }}
+      whileTap={busy ? undefined : { scale: 0.98 }}
+      transition={spring}
+      className="flex w-full items-center gap-4 rounded-2xl border px-4 py-4 text-left outline-none transition-colors hover:border-line-strong disabled:opacity-70"
+      style={{ borderColor: "var(--line)", background: "var(--bg-soft)" }}
+    >
+      <span className="squircle h-11 w-11 shrink-0" style={{ background: bg, color: fg }}>
+        {icon}
+      </span>
+      <span className="min-w-0 flex-1">
+        <span className="block font-display text-[15px] font-bold text-ink">{title}</span>
+        <span className="mt-0.5 block text-xs text-muted">{sub}</span>
+      </span>
+      {busy && (
+        <span className="spin-slow inline-flex text-faint">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round">
+            <path d="M12 3a9 9 0 1 0 9 9" />
+          </svg>
+        </span>
+      )}
+    </motion.button>
   );
 }

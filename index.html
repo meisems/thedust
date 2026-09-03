@@ -1,18 +1,45 @@
 <!doctype html>
-<html lang="en">
+<html lang="en" data-theme="light">
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <meta name="description" content="DustSweep — detect and sweep low-balance dust tokens on Robinhood Chain (4663) into $SWEEP, ETH, or the burn address. Serverless, zero custom contracts." />
-    <meta name="theme-color" content="#0a100c" />
-    <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='7' fill='%230a100c'/%3E%3Cpath d='M8 24 L20 12' stroke='%2322e06f' stroke-width='3' stroke-linecap='round'/%3E%3Cpath d='M20 12 L25 7' stroke='%23e9f5ec' stroke-width='3' stroke-linecap='round'/%3E%3Cpath d='M17 15 L13 13 M19 17 L16 20 M21 15 L24 17' stroke='%2322e06f' stroke-width='2' stroke-linecap='round'/%3E%3C/svg%3E" />
+    <meta
+      name="description"
+      content="dustsweep — find every dust token under $5 on Robinhood Chain (4663) and sweep it into $SWEEP, ETH, or the burn address. no contracts, no custody, no promises."
+    />
+    <meta name="theme-color" content="#FAF9F7" />
+    <link
+      rel="icon"
+      href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='9' fill='%2323935A'/%3E%3Cpath d='M21.5 8.5l-6 6' stroke='%23FBFBFA' stroke-width='2.6' stroke-linecap='round'/%3E%3Cpath d='M15.8 14.2l-5.4 2.5a2 2 0 0 0-.6 3.2l1.9 1.9a2 2 0 0 0 3.2-.6l2.5-5.4z' fill='%23FBFBFA'/%3E%3Cpath d='M23 17v4M21 19h4' stroke='%23C9EBD8' stroke-width='2' stroke-linecap='round'/%3E%3C/svg%3E"
+    />
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-    <link href="https://fonts.googleapis.com/css2?family=Chakra+Petch:wght@500;600;700&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500;600;700&display=swap" rel="stylesheet" />
-    <title>DustSweep — Robinhood Chain Dust Cleaner</title>
+    <link
+      href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,400..800&family=Sora:wght@300;400;500;600;700&family=Space+Mono:wght@400;700&display=swap"
+      rel="stylesheet"
+    />
+    <title>dustsweep — robinhood chain dust cleaner</title>
     <style>
-      html, body { margin: 0; padding: 0; background-color: #0a100c; }
+      html,
+      body {
+        margin: 0;
+        padding: 0;
+        background-color: #faf9f7;
+      }
     </style>
+    <script>
+      (function () {
+        try {
+          var t = localStorage.getItem("ds-theme");
+          if (t !== "dark" && t !== "light") {
+            t = window.matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light";
+          }
+          document.documentElement.dataset.theme = t;
+          document.querySelector('meta[name="theme-color"]').setAttribute("content", t === "dark" ? "#131318" : "#FAF9F7");
+          document.documentElement.style.backgroundColor = t === "dark" ? "#131318" : "#faf9f7";
+        } catch (e) {}
+      })();
+    </script>
   </head>
   <body>
     <div id="root"></div>

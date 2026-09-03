@@ -1,75 +1,78 @@
-import { createContext, useCallback, useContext, useRef, useState, type ReactNode } from "react";
-import { CheckIcon, WarnIcon, XIcon, ZapIcon, ExtIcon } from "./icons";
+import { createContext, useCallback, useContext, useState, type ReactNode } from "react";
+import { AnimatePresence, motion } from "framer-motion";
+import { spring } from "./ui";
+import { AlertIcon, CheckIcon, InfoIcon, XIcon } from "./icons";
 
-export interface Toast {
+/* ------------------------------------------------------------------ */
+/*  toasts — soft cards, deadpan delivery                              */
+/* ------------------------------------------------------------------ */
+
+export type ToastKind = "ok" | "info" | "warn" | "err";
+interface Toast {
   id: number;
-  kind: "success" | "error" | "info";
+  kind: ToastKind;
   title: string;
-  desc?: string;
-  link?: { url: string; label: string };
+  sub?: string;
 }
 
-interface ToastCtx {
-  push: (t: Omit<Toast, "id">) => void;
-}
+const ToastCtx = createContext<(kind: ToastKind, title: string, sub?: string) => void>(() => {});
+export const useToast = () => useContext(ToastCtx);
 
-const Ctx = createContext<ToastCtx>({ push: () => {} });
-export const useToasts = () => useContext(Ctx);
+const KIND_STYLE: Record<ToastKind, { bg: string; fg: string; icon: ReactNode }> = {
+  ok: { bg: "var(--acc-soft)", fg: "var(--acc-ink)", icon: <CheckIcon size={16} /> },
+  info: { bg: "var(--sky-soft)", fg: "var(--sky-ink)", icon: <InfoIcon size={16} /> },
+  warn: { bg: "var(--gold-soft)", fg: "var(--gold-ink)", icon: <AlertIcon size={16} /> },
+  err: { bg: "var(--coral-soft)", fg: "var(--coral-ink)", icon: <XIcon size={16} /> },
+};
+
+let seq = 0;
 
 export function ToastProvider({ children }: { children: ReactNode }) {
   const [toasts, setToasts] = useState<Toast[]>([]);
-  const idRef = useRef(0);
 
-  const push = useCallback((t: Omit<Toast, "id">) => {
-    const id = ++idRef.current;
-    setToasts((prev) => [...prev.slice(-3), { ...t, id }]);
-    setTimeout(() => setToasts((prev) => prev.filter((x) => x.id !== id)), 6500);
-  }, []);
+  const dismiss = useCallback((id: number) => setToasts((t) => t.filter((x) => x.id !== id)), []);
+
+  const push = useCallback(
+    (kind: ToastKind, title: string, sub?: string) => {
+      const id = ++seq;
+      setToasts((t) => [...t.slice(-3), { id, kind, title, sub }]);
+      window.setTimeout(() => dismiss(id), 4600);
+    },
+    [dismiss]
+  );
 
   return (
-    <Ctx.Provider value={{ push }}>
+    <ToastCtx.Provider value={push}>
       {children}
-      <div className="pointer-events-none fixed bottom-5 right-5 z-[90] flex w-[340px] max-w-[calc(100vw-2rem)] flex-col gap-2">
-        {toasts.map((t) => {
-          const tone =
-            t.kind === "success" ? "border-l-hood-500 text-hood-400"
-            : t.kind === "error" ? "border-l-redx-500 text-redx-400"
-            : "border-l-cyanx-500 text-cyanx-400";
-          return (
-            <div
-              key={t.id}
-              className={`toast-in pointer-events-auto rounded-md border border-ink-600 border-l-[3px] bg-ink-800/95 px-3.5 py-3 shadow-[0_16px_40px_-12px_rgba(0,0,0,.8)] backdrop-blur-sm ${tone}`}
-            >
-              <div className="flex items-start gap-2.5">
-                <span className="mt-0.5 shrink-0">
-                  {t.kind === "success" ? <CheckIcon size={15} /> : t.kind === "error" ? <WarnIcon size={15} /> : <ZapIcon size={15} />}
+      <div className="pointer-events-none fixed right-4 top-20 z-[120] flex w-[320px] max-w-[calc(100vw-2rem)] flex-col gap-2.5">
+        <AnimatePresence>
+          {toasts.map((t) => {
+            const s = KIND_STYLE[t.kind];
+            return (
+              <motion.button
+                key={t.id}
+                type="button"
+                onClick={() => dismiss(t.id)}
+                layout
+                initial={{ opacity: 0, x: 60, scale: 0.9 }}
+                animate={{ opacity: 1, x: 0, scale: 1 }}
+                exit={{ opacity: 0, x: 40, scale: 0.92 }}
+                transition={spring}
+                className="glass card pointer-events-auto flex items-start gap-3 rounded-2xl p-3.5 text-left shadow-lg"
+                style={{ borderColor: "var(--line)" }}
+              >
+                <span className="squircle mt-0.5 h-8 w-8 shrink-0" style={{ background: s.bg, color: s.fg }}>
+                  {s.icon}
                 </span>
-                <div className="min-w-0 flex-1">
-                  <p className="font-display text-[13px] font-semibold tracking-wide text-mist-100">{t.title}</p>
-                  {t.desc && <p className="mt-0.5 break-words font-mono text-[11px] leading-snug text-mist-500">{t.desc}</p>}
-                  {t.link && (
-                    <a
-                      href={t.link.url}
-                      target="_blank"
-                      rel="noreferrer"
-                      className="mt-1 inline-flex items-center gap-1 font-mono text-[11px] text-cyanx-400 hover:text-cyanx-500 hover:underline"
-                    >
-                      <ExtIcon size={11} /> {t.link.label}
-                    </a>
-                  )}
-                </div>
-                <button
-                  onClick={() => setToasts((prev) => prev.filter((x) => x.id !== t.id))}
-                  className="shrink-0 text-mist-600 transition-colors hover:text-mist-100"
-                  aria-label="Dismiss"
-                >
-                  <XIcon size={13} />
-                </button>
-              </div>
-            </div>
-          );
-        })}
+                <span className="min-w-0">
+                  <span className="block truncate text-[13.5px] font-semibold text-ink">{t.title}</span>
+                  {t.sub && <span className="mt-0.5 block text-xs leading-snug text-muted">{t.sub}</span>}
+                </span>
+              </motion.button>
+            );
+          })}
+        </AnimatePresence>
       </div>
-    </Ctx.Provider>
+    </ToastCtx.Provider>
   );
 }

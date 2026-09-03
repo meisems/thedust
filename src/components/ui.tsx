@@ -1,156 +1,186 @@
 import { useEffect, useRef, useState, type ReactNode } from "react";
+import { motion } from "framer-motion";
 
-/* ---------------- scroll reveal ---------------- */
+/* soft spring preset — the house physics */
+export const spring = { type: "spring" as const, damping: 15, stiffness: 200 };
 
+/* ------------------------------------------------------------------ */
+/*  Reveal — gentle scroll reveal                                      */
+/* ------------------------------------------------------------------ */
 export function Reveal({
   children,
   delay = 0,
-  className = "",
+  className,
+  y = 22,
 }: {
   children: ReactNode;
   delay?: number;
   className?: string;
+  y?: number;
 }) {
-  const ref = useRef<HTMLDivElement>(null);
-  const [on, setOn] = useState(false);
-
-  useEffect(() => {
-    const el = ref.current;
-    if (!el) return;
-    const io = new IntersectionObserver(
-      (entries) => {
-        if (entries[0].isIntersecting) {
-          setOn(true);
-          io.disconnect();
-        }
-      },
-      { threshold: 0.12 }
-    );
-    io.observe(el);
-    return () => io.disconnect();
-  }, []);
-
   return (
-    <div
-      ref={ref}
-      className={`reveal-base ${on ? "reveal-on" : ""} ${className}`}
-      style={{ transitionDelay: `${delay}ms` }}
+    <motion.div
+      className={className}
+      initial={{ opacity: 0, y }}
+      whileInView={{ opacity: 1, y: 0 }}
+      viewport={{ once: true, margin: "-60px" }}
+      transition={{ ...spring, delay }}
     >
       {children}
-    </div>
+    </motion.div>
   );
 }
 
-/* ---------------- count-up number ---------------- */
-
-export function CountUp({ value, decimals = 2, prefix = "", suffix = "", duration = 700 }: {
-  value: number; decimals?: number; prefix?: string; suffix?: string; duration?: number;
+/* ------------------------------------------------------------------ */
+/*  CountUp — odometer for USD figures                                 */
+/* ------------------------------------------------------------------ */
+export function CountUp({
+  value,
+  prefix = "",
+  digits = 2,
+  duration = 900,
+}: {
+  value: number;
+  prefix?: string;
+  digits?: number;
+  duration?: number;
 }) {
   const [display, setDisplay] = useState(0);
-  const prev = useRef(0);
-  const raf = useRef(0);
+  const fromRef = useRef(0);
 
   useEffect(() => {
-    const from = prev.current;
-    const to = value;
-    prev.current = value;
-    const t0 = performance.now();
-    const tick = (t: number) => {
-      const k = Math.min(1, (t - t0) / duration);
-      const eased = 1 - Math.pow(1 - k, 3);
-      setDisplay(from + (to - from) * eased);
-      if (k < 1) raf.current = requestAnimationFrame(tick);
+    const from = fromRef.current;
+    const start = performance.now();
+    let raf = 0;
+    const tick = (now: number) => {
+      const t = Math.min(1, (now - start) / duration);
+      const eased = 1 - Math.pow(1 - t, 3);
+      setDisplay(from + (value - from) * eased);
+      if (t < 1) raf = requestAnimationFrame(tick);
+      else fromRef.current = value;
     };
-    raf.current = requestAnimationFrame(tick);
-    return () => cancelAnimationFrame(raf.current);
+    raf = requestAnimationFrame(tick);
+    return () => cancelAnimationFrame(raf);
   }, [value, duration]);
 
   return (
-    <span>
+    <>
       {prefix}
-      {display.toLocaleString("en-US", { minimumFractionDigits: decimals, maximumFractionDigits: decimals })}
-      {suffix}
-    </span>
+      {display.toLocaleString("en-US", { minimumFractionDigits: digits, maximumFractionDigits: digits })}
+    </>
   );
 }
 
-/* ---------------- token monogram ---------------- */
-
-export function TokenLogo({ symbol, hue, size = 34, dead = false }: {
-  symbol: string; hue: number; size?: number; dead?: boolean;
-}) {
-  const bg = dead ? "#241417" : `hsl(${hue} 45% 16%)`;
-  const fg = dead ? "#ff7a70" : `hsl(${hue} 85% 66%)`;
-  const ring = dead ? "#5a2a2e" : `hsl(${hue} 45% 30%)`;
+/* ------------------------------------------------------------------ */
+/*  Monogram — soft hue-tinted token avatar                            */
+/* ------------------------------------------------------------------ */
+export function Monogram({ symbol, hue, size = 38 }: { symbol: string; hue: number; size?: number }) {
   return (
     <div
-      className="grid place-items-center rounded-full font-mono font-semibold shrink-0 select-none"
+      className="squircle shrink-0 font-display font-bold"
       style={{
         width: size,
         height: size,
-        background: `radial-gradient(circle at 32% 28%, ${dead ? "#3a1d20" : `hsl(${hue} 45% 22%)`}, ${bg})`,
-        border: `1px solid ${ring}`,
-        color: fg,
-        fontSize: size * 0.3,
-        letterSpacing: "-0.02em",
-        boxShadow: `0 0 14px -6px ${dead ? "rgba(255,92,92,.5)" : `hsl(${hue} 85% 60% / .45)`}`,
+        fontSize: size * 0.36,
+        background: `hsl(${hue} 62% 92%)`,
+        color: `hsl(${hue} 48% 36%)`,
+        boxShadow: "inset 0 0 0 1px rgba(24,24,27,0.06)",
       }}
     >
-      {symbol.slice(0, 3)}
+      {symbol.slice(0, 2).toUpperCase()}
     </div>
   );
 }
 
-/* ---------------- badges ---------------- */
-
-export function Badge({ tone, children }: { tone: "green" | "red" | "amber" | "cyan" | "dim"; children: ReactNode }) {
-  const tones: Record<string, string> = {
-    green: "text-hood-400 border-hood-500/40 bg-hood-500/10",
-    red: "text-redx-400 border-redx-500/40 bg-redx-500/10",
-    amber: "text-amberx-400 border-amberx-500/40 bg-amberx-500/10",
-    cyan: "text-cyanx-400 border-cyanx-500/40 bg-cyanx-500/10",
-    dim: "text-mist-500 border-ink-500 bg-ink-700/40",
-  };
+/* ------------------------------------------------------------------ */
+/*  ProgressBar — soft pill fill                                       */
+/* ------------------------------------------------------------------ */
+export function ProgressBar({ value, tone = "var(--acc)" }: { value: number; tone?: string }) {
   return (
-    <span className={`inline-flex items-center gap-1 rounded border px-1.5 py-0.5 font-mono text-[10px] font-medium uppercase tracking-wider ${tones[tone]}`}>
-      {children}
-    </span>
-  );
-}
-
-/* ---------------- progress bar ---------------- */
-
-export function ProgressBar({ value, tone = "green" }: { value: number; tone?: "green" | "amber" | "red" }) {
-  const color = tone === "green" ? "linear-gradient(90deg,#14b857,#3df586)" : tone === "amber" ? "linear-gradient(90deg,#d99a25,#ffc861)" : "linear-gradient(90deg,#c23d3d,#ff7a70)";
-  return (
-    <div className="h-1.5 w-full overflow-hidden rounded-full bg-ink-700">
-      <div
-        className="h-full rounded-full transition-all duration-500 ease-out"
-        style={{ width: `${Math.min(100, Math.max(0, value * 100))}%`, background: color, boxShadow: "0 0 10px rgba(34,224,111,.4)" }}
+    <div className="h-2 w-full overflow-hidden rounded-full" style={{ background: "var(--line)" }}>
+      <motion.div
+        className="h-full rounded-full"
+        style={{ background: tone }}
+        animate={{ width: `${Math.round(value * 100)}%` }}
+        transition={{ duration: 0.5, ease: [0.22, 1, 0.36, 1] }}
       />
     </div>
   );
 }
 
-/* ---------------- delta chip with flash ---------------- */
-
-export function DeltaChip({ value }: { value: number }) {
-  const [flash, setFlash] = useState("");
-  const prev = useRef(value);
-  useEffect(() => {
-    if (Math.abs(value - prev.current) > 1e-9) {
-      setFlash(value > prev.current ? "flash-up" : "flash-down");
-      prev.current = value;
-      const id = setTimeout(() => setFlash(""), 1200);
-      return () => clearTimeout(id);
-    }
-  }, [value]);
-
-  if (Math.abs(value) < 0.005) return <span className="font-mono text-[11px] text-mist-600">—</span>;
-  const up = value > 0;
+/* ------------------------------------------------------------------ */
+/*  StatusPill — tiny rounded badge                                    */
+/* ------------------------------------------------------------------ */
+export function StatusPill({
+  tone,
+  children,
+}: {
+  tone: "acc" | "gold" | "coral" | "sky" | "muted";
+  children: ReactNode;
+}) {
+  const map = {
+    acc: { bg: "var(--acc-soft)", fg: "var(--acc-ink)" },
+    gold: { bg: "var(--gold-soft)", fg: "var(--gold-ink)" },
+    coral: { bg: "var(--coral-soft)", fg: "var(--coral-ink)" },
+    sky: { bg: "var(--sky-soft)", fg: "var(--sky-ink)" },
+    muted: { bg: "var(--bg-soft)", fg: "var(--muted)" },
+  }[tone];
   return (
-    <span className={`font-mono text-[11px] ${flash} ${up ? "text-hood-400" : "text-redx-400"}`}>
-      {up ? "▲" : "▼"} {Math.abs(value).toFixed(1)}%
+    <span
+      className="inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 font-mono text-[10.5px] leading-none"
+      style={{ background: map.bg, color: map.fg }}
+    >
+      {children}
     </span>
+  );
+}
+
+/* ------------------------------------------------------------------ */
+/*  Check — springy custom checkbox                                    */
+/* ------------------------------------------------------------------ */
+export function SoftCheck({ checked, onChange, label }: { checked: boolean; onChange: () => void; label?: string }) {
+  return (
+    <button
+      type="button"
+      role="checkbox"
+      aria-checked={checked}
+      onClick={(e) => {
+        e.stopPropagation();
+        onChange();
+      }}
+      className="group inline-flex items-center gap-2.5 outline-none"
+    >
+      <motion.span
+        className="squircle shrink-0"
+        style={{
+          width: 21,
+          height: 21,
+          borderRadius: 8,
+          background: checked ? "var(--acc)" : "var(--card)",
+          boxShadow: checked ? "none" : "inset 0 0 0 1.6px var(--line-strong)",
+        }}
+        animate={{ scale: checked ? [1, 1.25, 1] : 1 }}
+        transition={{ duration: 0.3 }}
+      >
+        {checked && (
+          <motion.svg
+            width="12"
+            height="12"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="#fff"
+            strokeWidth={3.4}
+            strokeLinecap="round"
+            strokeLinejoin="round"
+            initial={{ pathLength: 0, opacity: 0 }}
+            animate={{ pathLength: 1, opacity: 1 }}
+            transition={{ duration: 0.25, delay: 0.05 }}
+          >
+            <motion.path d="m5.5 12.5 4.3 4.3L18.5 7.5" initial={{ pathLength: 0 }} animate={{ pathLength: 1 }} />
+          </motion.svg>
+        )}
+      </motion.span>
+      {label && <span className="font-mono text-[11px] text-muted group-hover:text-ink-2">{label}</span>}
+    </button>
   );
 }

@@ -1,193 +1,214 @@
-import { useEffect } from "react";
-import { fmtUsd, shortHash } from "../lib/chain";
-import type { QueueStep } from "../hooks/useSweepQueue";
-import { ProgressBar, TokenLogo } from "./ui";
-import { CheckIcon, ExtIcon, FlameIcon, RefreshIcon, Spinner, WarnIcon, XIcon, CoinIcon, EthIcon, BroomIcon } from "./icons";
+import { AnimatePresence, motion } from "framer-motion";
+import { Monogram, ProgressBar, spring, StatusPill } from "./ui";
+import { AlertIcon, CheckIcon, ExternalIcon, FlameIcon, RefreshIcon, XIcon, ZapIcon } from "./icons";
+import { explorerAddress } from "../lib/chain";
+import type { QueueStep, QueueSummary } from "../hooks/useSweepQueue";
+import type { Destination } from "../hooks/useSweepQueue";
 
 interface Props {
   open: boolean;
-  mode: "demo" | "live" | null;
+  onClose: () => void;
   steps: QueueStep[];
+  progress: number;
   running: boolean;
   finished: boolean;
-  progress: number;
-  destination: "sweep" | "eth" | "burn";
-  summary: { confirmed: number; failed: number; usdSwept: number; failedSymbols: string[] };
-  onClose: () => void;
+  summary: QueueSummary;
+  destination: Destination;
+  address: string | null;
   onAbort: () => void;
   onRetry: () => void;
 }
 
+/* ------------------------------------------------------------------ */
+/*  live execution modal — one checklist, zero mercy                   */
+/* ------------------------------------------------------------------ */
 export function ExecutionModal(p: Props) {
-  useEffect(() => {
-    if (!p.open) return;
-    const onKey = (e: KeyboardEvent) => {
-      if (e.key === "Escape" && !p.running) p.onClose();
-    };
-    window.addEventListener("keydown", onKey);
-    return () => window.removeEventListener("keydown", onKey);
-  }, [p.open, p.running, p.onClose]);
-
-  if (!p.open) return null;
-
-  const destMeta =
-    p.destination === "sweep"
-      ? { label: "$SWEEP", color: "text-hood-400", icon: <CoinIcon size={15} /> }
-      : p.destination === "eth"
-        ? { label: "ETH", color: "text-cyanx-400", icon: <EthIcon size={15} /> }
-        : { label: "0x…dEaD", color: "text-redx-400", icon: <FlameIcon size={15} /> };
+  const done = p.steps.filter((s) => ["confirmed", "failed", "skipped"].includes(s.status)).length;
+  const title = p.running ? "sweeping the floor…" : p.summary.failed > 0 ? "mostly sparkling." : "sparkling.";
 
   return (
-    <div className="fixed inset-0 z-[70] grid place-items-center bg-ink-950/85 p-4 backdrop-blur-sm">
-      <div className="rise-in flex max-h-[88vh] w-full max-w-xl flex-col overflow-hidden rounded-xl border border-ink-600 bg-ink-800 shadow-[0_40px_100px_-20px_rgba(0,0,0,.95)]">
-        {/* head */}
-        <div className="border-b border-ink-600 bg-ink-850/80 px-5 py-4">
-          <div className="flex items-center justify-between gap-3">
-            <div className="flex items-center gap-2.5">
-              <span className={destMeta.color}>{p.running ? <Spinner size={17} /> : destMeta.icon}</span>
-              <h2 className="font-display text-[15px] font-bold tracking-wide text-mist-100">
-                {p.running ? "Executing sweep queue" : p.finished ? "Queue complete" : "Queue"}
-              </h2>
-              <span className="chip text-mist-500">→ {destMeta.label}</span>
-            </div>
-            <div className="flex items-center gap-2">
-              {p.running && (
-                <button onClick={p.onAbort} className="btn-ghost px-2.5 py-1.5 text-[11px] text-amberx-400 hover:text-amberx-400">
-                  ABORT
-                </button>
-              )}
-              <button
-                onClick={p.onClose}
-                disabled={p.running}
-                className="text-mist-600 transition-colors hover:text-mist-100 disabled:opacity-30"
-                aria-label="Close"
-              >
-                <XIcon size={16} />
-              </button>
-            </div>
-          </div>
-          <div className="mt-3 flex items-center gap-3">
-            <ProgressBar value={p.progress} tone={p.running ? "amber" : p.summary.failed > 0 ? "red" : "green"} />
-            <span className="shrink-0 font-mono text-[11px] font-semibold text-mist-300">
-              {Math.round(p.progress * 100)}%
-            </span>
-          </div>
-          {p.mode === "demo" && (
-            <p className="mt-2 font-mono text-[9.5px] uppercase tracking-[0.2em] text-cyanx-400/80">
-              ◈ simulated execution — hashes are demo artifacts
-            </p>
-          )}
-        </div>
+    <AnimatePresence>
+      {p.open && (
+        <motion.div
+          className="fixed inset-0 z-[110] flex items-end justify-center p-4 sm:items-center"
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          exit={{ opacity: 0 }}
+        >
+          {/* frosted backdrop */}
+          <div className="absolute inset-0" style={{ background: "rgba(20,20,24,0.4)", backdropFilter: "blur(8px)", WebkitBackdropFilter: "blur(8px)" }} onClick={p.running ? undefined : p.onClose} />
 
-        {/* steps */}
-        <div className="flex-1 overflow-y-auto px-5 py-4">
-          <ol className="space-y-2">
-            {p.steps.map((s, i) => (
-              <li
-                key={s.id}
-                className={`flex items-center gap-3 rounded-lg border px-3.5 py-2.5 transition-all duration-300 ${
-                  s.status === "active"
-                    ? "border-amberx-500/50 bg-amberx-500/[0.06]"
-                    : s.status === "submitted"
-                      ? "border-cyanx-500/40 bg-cyanx-500/[0.05]"
-                      : s.status === "confirmed"
-                        ? "border-hood-500/35 bg-hood-500/[0.04]"
-                        : s.status === "failed"
-                          ? "border-redx-500/45 bg-redx-500/[0.06]"
-                          : "border-ink-700 bg-ink-850/50 opacity-70"
-                }`}
-              >
-                <span className="w-5 shrink-0 text-center font-mono text-[10px] text-mist-600">{String(i + 1).padStart(2, "0")}</span>
-                <TokenLogo symbol={s.symbol} hue={s.hue} size={26} dead={s.kind === "burn"} />
-                <div className="min-w-0 flex-1">
-                  <div className="truncate font-mono text-[11.5px] font-medium text-mist-100">{s.label}</div>
-                  {s.status === "submitted" && s.hash && (
-                    <a
-                      href={s.txUrl}
-                      target="_blank"
-                      rel="noreferrer"
-                      className="mt-0.5 inline-flex items-center gap-1 font-mono text-[10px] text-cyanx-400 hover:underline"
-                    >
-                      {shortHash(s.hash)} <ExtIcon size={9} />
-                    </a>
-                  )}
-                  {s.status === "confirmed" && s.hash && (
-                    <a
-                      href={s.txUrl}
-                      target="_blank"
-                      rel="noreferrer"
-                      className="mt-0.5 inline-flex items-center gap-1 font-mono text-[10px] text-hood-500/80 hover:underline"
-                    >
-                      confirmed · {shortHash(s.hash)} <ExtIcon size={9} />
-                    </a>
-                  )}
-                  {s.status === "failed" && s.error && (
-                    <div className="mt-0.5 truncate font-mono text-[10px] text-redx-400" title={s.error}>
-                      ✕ {s.error}
-                    </div>
-                  )}
+          <motion.div
+            initial={{ opacity: 0, y: 60, scale: 0.96 }}
+            animate={{ opacity: 1, y: 0, scale: 1 }}
+            exit={{ opacity: 0, y: 40, scale: 0.97 }}
+            transition={spring}
+            className="card relative flex max-h-[86vh] w-full max-w-lg flex-col overflow-hidden rounded-[1.75rem]"
+          >
+            {/* header */}
+            <div className="flex items-center justify-between border-b px-6 py-4" style={{ borderColor: "var(--line)" }}>
+              <div className="flex items-center gap-3">
+                <span className="squircle h-10 w-10" style={{ background: p.destination === "burn" ? "var(--coral-soft)" : "var(--acc-soft)", color: p.destination === "burn" ? "var(--coral-ink)" : "var(--acc-ink)" }}>
+                  {p.destination === "burn" ? <FlameIcon size={18} /> : <ZapIcon size={18} />}
+                </span>
+                <div>
+                  <h2 className="font-display text-lg font-bold leading-tight tracking-tight text-ink">{title}</h2>
+                  <p className="font-mono text-[10.5px] uppercase tracking-[0.12em] text-faint">
+                    {done}/{p.steps.length} steps
+                  </p>
                 </div>
-                <StepStatusIcon status={s.status} />
-              </li>
-            ))}
-          </ol>
-        </div>
+              </div>
+              <div className="flex items-center gap-2">
+                <StatusPill tone={p.running ? "sky" : p.summary.failed > 0 ? "coral" : "acc"}>
+                  {p.running ? "live" : p.summary.failed > 0 ? `${p.summary.failed} failed` : "done"}
+                </StatusPill>
+                {!p.running && (
+                  <button type="button" onClick={p.onClose} aria-label="close" className="squircle h-8 w-8 text-muted transition-colors hover:bg-bg-soft hover:text-ink" style={{ borderRadius: 12 }}>
+                    <XIcon size={16} />
+                  </button>
+                )}
+              </div>
+            </div>
 
-        {/* footer summary */}
-        {p.finished && (
-          <div className="border-t border-ink-600 bg-ink-850/80 px-5 py-4">
-            <div className="flex flex-wrap items-center gap-2">
-              <Chip tone="green"><CheckIcon size={11} /> {p.summary.confirmed} swept</Chip>
-              {p.summary.failed > 0 && <Chip tone="red"><WarnIcon size={11} /> {p.summary.failed} failed</Chip>}
-              <Chip tone="dim">{fmtUsd(p.summary.usdSwept)} recovered</Chip>
-              {p.summary.failedSymbols.length > 0 && (
-                <span className="font-mono text-[10px] text-mist-600">failed: {p.summary.failedSymbols.join(", ")}</span>
+            {/* progress */}
+            <div className="px-6 pt-4">
+              <ProgressBar value={p.progress} tone={p.summary.failed > 0 && p.finished ? "var(--coral)" : "var(--acc)"} />
+            </div>
+
+            {/* steps */}
+            <div className="min-h-0 flex-1 overflow-y-auto px-3.5 py-3">
+              {p.steps.map((s) => (
+                <StepRow key={s.id} step={s} />
+              ))}
+              {p.steps.length === 0 && <p className="px-3 py-6 text-center text-xs text-muted">warming up the queue…</p>}
+            </div>
+
+            {/* footer */}
+            <div className="border-t px-6 py-4" style={{ borderColor: "var(--line)" }}>
+              {p.running ? (
+                <div className="flex items-center justify-between gap-3">
+                  <p className="font-mono text-[10.5px] text-faint">one tx at a time — nonces are fragile.</p>
+                  <button type="button" onClick={p.onAbort} className="chip border-transparent transition-transform hover:scale-105" style={{ background: "var(--coral-soft)", color: "var(--coral-ink)" }}>
+                    abort
+                  </button>
+                </div>
+              ) : (
+                <div className="flex flex-wrap items-center justify-between gap-3">
+                  <p className="font-mono text-[11px] text-muted">
+                    ${p.summary.usdSwept.toFixed(2)} {p.destination === "burn" ? "sent to the void" : "recovered"} · {p.summary.confirmed} confirmed
+                    {p.summary.skipped > 0 ? ` · ${p.summary.skipped} skipped` : ""}
+                  </p>
+                  <div className="flex items-center gap-2">
+                    {p.summary.failed > 0 && (
+                      <motion.button
+                        type="button"
+                        onClick={p.onRetry}
+                        whileTap={{ scale: 0.95 }}
+                        className="chip border-transparent transition-transform hover:scale-105"
+                        style={{ background: "var(--coral-soft)", color: "var(--coral-ink)" }}
+                      >
+                        <RefreshIcon size={13} /> retry {p.summary.failed} failed
+                      </motion.button>
+                    )}
+                    <motion.button
+                      type="button"
+                      onClick={p.onClose}
+                      whileTap={{ scale: 0.95 }}
+                      className="chip border-transparent transition-transform hover:scale-105"
+                      style={{ background: "var(--acc)", color: "#fff" }}
+                    >
+                      <CheckIcon size={13} /> nice
+                    </motion.button>
+                  </div>
+                </div>
+              )}
+              {p.finished && p.address && (
+                <a
+                  href={explorerAddress(p.address)}
+                  target="_blank"
+                  rel="noreferrer"
+                  className="mt-3 flex items-center gap-1.5 font-mono text-[10.5px] text-faint transition-colors hover:text-ink-2"
+                >
+                  <ExternalIcon size={12} /> inspect wallet on blockscout
+                </a>
               )}
             </div>
-            <div className="mt-3.5 flex gap-2.5">
-              {p.summary.failed > 0 && (
-                <button onClick={p.onRetry} className="btn-ghost flex flex-1 items-center justify-center gap-2 px-4 py-2.5 text-[12px]">
-                  <RefreshIcon size={13} /> RETRY FAILED ({p.summary.failed})
-                </button>
-              )}
-              <button onClick={p.onClose} className="btn-primary flex flex-1 items-center justify-center gap-2 px-4 py-2.5 text-[13px]">
-                <BroomIcon size={15} /> DONE — RESCAN
-              </button>
-            </div>
-          </div>
-        )}
-      </div>
-    </div>
+          </motion.div>
+        </motion.div>
+      )}
+    </AnimatePresence>
   );
 }
 
-function StepStatusIcon({ status }: { status: QueueStep["status"] }) {
-  switch (status) {
-    case "queued":
-      return <span className="h-3.5 w-3.5 shrink-0 rounded-full border border-ink-500" />;
-    case "active":
-      return <Spinner size={15} className="shrink-0 text-amberx-400" />;
-    case "submitted":
-      return <span className="shrink-0 font-mono text-[9px] font-bold uppercase tracking-widest text-cyanx-400">pending</span>;
-    case "confirmed":
-      return <span className="grid h-5 w-5 shrink-0 place-items-center rounded-full bg-hood-500/15 text-hood-400"><CheckIcon size={11} /></span>;
-    case "failed":
-      return <span className="grid h-5 w-5 shrink-0 place-items-center rounded-full bg-redx-500/15 text-redx-400"><XIcon size={11} /></span>;
-    case "skipped":
-      return <span className="shrink-0 font-mono text-[9px] uppercase tracking-widest text-mist-600">skip</span>;
-  }
-}
+/* ------------------------------------------------------------------ */
 
-function Chip({ tone, children }: { tone: "green" | "red" | "dim"; children: React.ReactNode }) {
-  const cls =
-    tone === "green"
-      ? "border-hood-500/40 bg-hood-500/10 text-hood-400"
-      : tone === "red"
-        ? "border-redx-500/40 bg-redx-500/10 text-redx-400"
-        : "border-ink-600 bg-ink-800 text-mist-400";
+function StepRow({ step }: { step: QueueStep }) {
+  const statusChip = (() => {
+    switch (step.status) {
+      case "queued":
+        return <StatusPill tone="muted">queued</StatusPill>;
+      case "active":
+        return (
+          <StatusPill tone="sky">
+            <span className="h-1.5 w-1.5 animate-pulse rounded-full" style={{ background: "var(--sky)" }} /> in wallet…
+          </StatusPill>
+        );
+      case "submitted":
+        return (
+          <StatusPill tone="gold">
+            <span className="h-1.5 w-1.5 animate-pulse rounded-full" style={{ background: "var(--gold)" }} /> confirming…
+          </StatusPill>
+        );
+      case "confirmed":
+        return (
+          <StatusPill tone="acc">
+            <CheckIcon size={11} /> done
+          </StatusPill>
+        );
+      case "failed":
+        return (
+          <StatusPill tone="coral">
+            <XIcon size={11} /> failed
+          </StatusPill>
+        );
+      case "skipped":
+        return <StatusPill tone="muted">skipped</StatusPill>;
+    }
+  })();
+
   return (
-    <span className={`inline-flex items-center gap-1.5 rounded-md border px-2.5 py-1 font-mono text-[11px] font-semibold ${cls}`}>
-      {children}
-    </span>
+    <motion.div
+      layout
+      initial={{ opacity: 0, y: 6 }}
+      animate={{ opacity: 1, y: 0 }}
+      className="rounded-2xl px-2.5 py-2.5 transition-colors"
+      style={{ background: step.status === "active" || step.status === "submitted" ? "var(--bg-soft)" : "transparent" }}
+    >
+      <div className="flex items-center gap-3">
+        <Monogram symbol={step.symbol} hue={step.hue} size={32} />
+        <div className="min-w-0 flex-1">
+          <div className="truncate text-[13px] font-semibold text-ink">{step.label}</div>
+          {step.status === "failed" && step.error && (
+            <div className="mt-0.5 flex items-start gap-1 text-[11px] leading-snug text-coral-ink">
+              <AlertIcon size={12} className="mt-0.5 shrink-0" /> {step.error}
+            </div>
+          )}
+        </div>
+        {step.txUrl && (
+          <a
+            href={step.txUrl}
+            target="_blank"
+            rel="noreferrer"
+            aria-label="view tx"
+            className="squircle h-7 w-7 shrink-0 text-faint transition-colors hover:bg-bg-soft hover:text-ink"
+            style={{ borderRadius: 10 }}
+            onClick={(e) => e.stopPropagation()}
+          >
+            <ExternalIcon size={13} />
+          </a>
+        )}
+        {statusChip}
+      </div>
+    </motion.div>
   );
 }

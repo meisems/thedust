@@ -1,149 +1,214 @@
 import type { SVGProps } from "react";
 
-type P = SVGProps<SVGSVGElement> & { size?: number };
+/* ------------------------------------------------------------------ */
+/*  Nucleo-style icon system — smooth geometric line icons.            */
+/*  24×24 grid · 1.7px stroke · rounded caps & joins · 16/20/24 sizes  */
+/* ------------------------------------------------------------------ */
 
-const base = (size = 16) => ({
-  width: size,
-  height: size,
-  viewBox: "0 0 24 24",
-  fill: "none",
-  stroke: "currentColor",
-  strokeWidth: 1.8,
-  strokeLinecap: "round" as const,
-  strokeLinejoin: "round" as const,
-});
+interface IconProps extends SVGProps<SVGSVGElement> {
+  size?: number;
+}
 
-/** Brand mark — broom sweeping a spark trail */
-export const BroomIcon = ({ size, ...p }: P) => (
-  <svg {...base(size)} {...p}>
-    <path d="M4 20 L14.5 9.5" strokeWidth={2.4} />
-    <path d="M14.5 9.5 L19 5" strokeWidth={2.4} />
-    <path d="M11.5 12.5 L8.5 11 M13.5 14.5 L11 17.5 M15 10.5 L18.5 12.5" />
-    <path d="M4 20 L7 17" strokeWidth={2.4} />
+function base({ size = 20, ...rest }: IconProps) {
+  return {
+    width: size,
+    height: size,
+    viewBox: "0 0 24 24",
+    fill: "none",
+    stroke: "currentColor",
+    strokeWidth: 1.7,
+    strokeLinecap: "round" as const,
+    strokeLinejoin: "round" as const,
+    ...rest,
+  };
+}
+
+export const BroomIcon = (p: IconProps) => (
+  <svg {...base(p)}>
+    <path d="M20 4l-6.2 6.2" />
+    <path d="M13.8 10.2l-7 2.9a2 2 0 0 0-.6 3.3l2.2 2.2a2 2 0 0 0 3.3-.6l2.9-7a.75.75 0 0 0-.8-.8Z" />
+    <path d="M7.2 17.6l-.9 2.1M10 19.3l-.3 1.6" strokeWidth={1.4} />
   </svg>
 );
 
-export const EthIcon = ({ size, ...p }: P) => (
-  <svg {...base(size)} {...p}>
-    <path d="M12 2.5 L18 12 L12 15.5 L6 12 Z" />
-    <path d="M12 17.5 L18 13.8 L12 21.5 L6 13.8 Z" />
+export const SparkIcon = (p: IconProps) => (
+  <svg {...base(p)}>
+    <path d="M12 3.5c.55 4.4 3.9 7.75 8.3 8.3-4.4.55-7.75 3.9-8.3 8.3-.55-4.4-3.9-7.75-8.3-8.3 4.4-.55 7.75-3.9 8.3-8.3Z" />
   </svg>
 );
 
-export const CoinIcon = ({ size, ...p }: P) => (
-  <svg {...base(size)} {...p}>
-    <circle cx="12" cy="12" r="8.5" />
-    <path d="M15 8.6 A4.6 4.6 0 1 0 15 15.4" />
-    <path d="M15.5 12 H10" />
-    <path d="M20.5 4.5 L22 3 M20.5 4.5 L22 6 M20.5 4.5 L19 3" strokeWidth={1.4} />
+export const SunIcon = (p: IconProps) => (
+  <svg {...base(p)}>
+    <circle cx="12" cy="12" r="3.8" />
+    <path d="M12 3.5v1.8M12 18.7v1.8M3.5 12h1.8M18.7 12h1.8M6 6l1.3 1.3M16.7 16.7L18 18M18 6l-1.3 1.3M7.3 16.7L6 18" />
   </svg>
 );
 
-export const FlameIcon = ({ size, ...p }: P) => (
-  <svg {...base(size)} {...p}>
-    <path d="M12 21c3.9 0 6.5-2.5 6.5-6.2 0-2.8-1.8-4.7-3.2-6.3C13.9 6.9 13 5.2 13 3c-2.8 1.7-4.2 4.2-4.1 6.7-.9-.4-1.5-1.2-1.8-2.2-1 1.3-1.6 3-1.6 4.8C5.5 18.5 8.1 21 12 21Z" />
-    <path d="M12 21c1.9 0 3.2-1.3 3.2-3.2 0-1.8-1.4-2.9-3.2-4.6-1.8 1.7-3.2 2.8-3.2 4.6C8.8 19.7 10.1 21 12 21Z" strokeWidth={1.4} />
+export const MoonIcon = (p: IconProps) => (
+  <svg {...base(p)}>
+    <path d="M19.8 13.6A7.8 7.8 0 0 1 10.4 4.2 8 8 0 1 0 19.8 13.6Z" />
   </svg>
 );
 
-export const SkullIcon = ({ size, ...p }: P) => (
-  <svg {...base(size)} {...p}>
-    <path d="M12 3a8 8 0 0 0-8 8c0 2.5 1.2 4.4 3 5.7V20a1.5 1.5 0 0 0 3 .1V19h4v1.1a1.5 1.5 0 0 0 3-.1v-3.3c1.8-1.3 3-3.2 3-5.7a8 8 0 0 0-8-8Z" />
-    <circle cx="9" cy="11.5" r="1.6" fill="currentColor" stroke="none" />
-    <circle cx="15" cy="11.5" r="1.6" fill="currentColor" stroke="none" />
-    <path d="M12 14.5 L11 16.5 H13 Z" fill="currentColor" stroke="none" />
+export const WalletIcon = (p: IconProps) => (
+  <svg {...base(p)}>
+    <path d="M4 7.5A2.5 2.5 0 0 1 6.5 5h11A2.5 2.5 0 0 1 20 7.5v9a2.5 2.5 0 0 1-2.5 2.5h-11A2.5 2.5 0 0 1 4 16.5v-9Z" />
+    <path d="M15 12.3h.01" strokeWidth={2.6} />
+    <path d="M4 9.2h11.5" strokeWidth={1.4} />
   </svg>
 );
 
-export const WalletIcon = ({ size, ...p }: P) => (
-  <svg {...base(size)} {...p}>
-    <path d="M3.5 7.5 A2.5 2.5 0 0 1 6 5 H18 A2.5 2.5 0 0 1 20.5 7.5 V16.5 A2.5 2.5 0 0 1 18 19 H6 A2.5 2.5 0 0 1 3.5 16.5 Z" />
-    <path d="M15 12 h5.5 v3.5 H15 a1.75 1.75 0 1 1 0 -3.5 Z" />
-    <path d="M6 5 L14.5 2.8 A1.5 1.5 0 0 1 16.3 4.3 V5" />
+export const ChevronDownIcon = (p: IconProps) => (
+  <svg {...base(p)}>
+    <path d="m6.5 9.5 5.5 5.5 5.5-5.5" />
   </svg>
 );
 
-export const RadarIcon = ({ size, ...p }: P) => (
-  <svg {...base(size)} {...p}>
-    <circle cx="12" cy="12" r="8.5" />
-    <circle cx="12" cy="12" r="4.5" strokeDasharray="2.5 3" />
-    <path d="M12 12 L18 6" />
-    <circle cx="15" cy="14.5" r="1.1" fill="currentColor" stroke="none" />
-    <circle cx="8.5" cy="9.5" r="1.1" fill="currentColor" stroke="none" />
+export const CopyIcon = (p: IconProps) => (
+  <svg {...base(p)}>
+    <rect x="8.5" y="8.5" width="11" height="11" rx="2.5" />
+    <path d="M5.5 15.5h-.2A1.8 1.8 0 0 1 3.5 13.7v-8A1.8 1.8 0 0 1 5.3 3.9h8a1.8 1.8 0 0 1 1.8 1.8v.3" />
   </svg>
 );
 
-export const CheckIcon = ({ size, ...p }: P) => (
-  <svg {...base(size)} {...p} strokeWidth={2.4}>
-    <path d="M4.5 12.5 L9.5 17.5 L19.5 6.5" />
+export const ExternalIcon = (p: IconProps) => (
+  <svg {...base(p)}>
+    <path d="M10 5.5H7A2.5 2.5 0 0 0 4.5 8v9A2.5 2.5 0 0 0 7 19.5h9a2.5 2.5 0 0 0 2.5-2.5v-3" />
+    <path d="M13.5 4.5H19.5V10.5" />
+    <path d="M19 5 11.5 12.5" />
   </svg>
 );
 
-export const XIcon = ({ size, ...p }: P) => (
-  <svg {...base(size)} {...p} strokeWidth={2.2}>
-    <path d="M6 6 L18 18 M18 6 L6 18" />
+export const RefreshIcon = (p: IconProps) => (
+  <svg {...base(p)}>
+    <path d="M19.5 12a7.5 7.5 0 1 1-2.2-5.3" />
+    <path d="M19.7 3.8v3.4h-3.4" />
   </svg>
 );
 
-export const ExtIcon = ({ size, ...p }: P) => (
-  <svg {...base(size)} {...p} strokeWidth={2}>
-    <path d="M9 5 H5 V19 H19 V15" />
-    <path d="M13 5 H19 V11 M19 5 L11 13" />
+export const RadarIcon = (p: IconProps) => (
+  <svg {...base(p)}>
+    <path d="M4 8.2V7a2.5 2.5 0 0 1 2.5-2.5h1.3M16.2 4.5h1.3A2.5 2.5 0 0 1 20 7v1.2M20 15.8V17a2.5 2.5 0 0 1-2.5 2.5h-1.3M7.8 19.5H6.5A2.5 2.5 0 0 1 4 17v-1.2" />
+    <path d="M12 12h.01" strokeWidth={2.8} />
+    <path d="M8.8 12a3.2 3.2 0 0 1 3.2-3.2" strokeWidth={1.4} />
   </svg>
 );
 
-export const ZapIcon = ({ size, ...p }: P) => (
-  <svg {...base(size)} {...p}>
-    <path d="M13 2 L5 13.5 H11 L10 22 L19 9.5 H13 Z" />
+export const ZapIcon = (p: IconProps) => (
+  <svg {...base(p)}>
+    <path d="M13 3 5.2 13.4h5.3L11 21l7.8-10.4h-5.3L13 3Z" />
   </svg>
 );
 
-export const ShieldIcon = ({ size, ...p }: P) => (
-  <svg {...base(size)} {...p}>
-    <path d="M12 2.8 L20 6 V11.5 C20 16.5 16.5 20 12 21.5 C7.5 20 4 16.5 4 11.5 V6 Z" />
-    <path d="M8.8 12 L11.2 14.4 L15.4 9.6" />
+export const GhostIcon = (p: IconProps) => (
+  <svg {...base(p)}>
+    <path d="M5 11.2a7 7 0 0 1 14 0V20l-2.3-1.7-2.4 1.7-2.3-1.7-2.3 1.7-2.4-1.7L5 20v-8.8Z" />
+    <path d="M9.6 11h.01M14.4 11h.01" strokeWidth={2.6} />
   </svg>
 );
 
-export const ArrowRightIcon = ({ size, ...p }: P) => (
-  <svg {...base(size)} {...p} strokeWidth={2.2}>
-    <path d="M4 12 H20 M14 6 L20 12 L14 18" />
+export const CoinIcon = (p: IconProps) => (
+  <svg {...base(p)}>
+    <circle cx="12" cy="12" r="8.2" />
+    <path d="M14.6 9.4c-.6-.9-1.6-1.4-2.7-1.4-1.6 0-2.7.8-2.7 1.9 0 2.7 5.6 1.4 5.6 4.2 0 1.2-1.2 2-2.9 2-1.3 0-2.4-.5-3-1.4" strokeWidth={1.4} />
+    <path d="M12 6.2v1.6M12 16.2v1.6" strokeWidth={1.4} />
   </svg>
 );
 
-export const WarnIcon = ({ size, ...p }: P) => (
-  <svg {...base(size)} {...p}>
-    <path d="M12 3.5 L21.5 20 H2.5 Z" />
-    <path d="M12 9.5 V14" strokeWidth={2.2} />
-    <circle cx="12" cy="16.8" r="1" fill="currentColor" stroke="none" />
+export const EthIcon = (p: IconProps) => (
+  <svg {...base(p)}>
+    <path d="m12 3.5 4.8 7.4-4.8 2.9-4.8-2.9L12 3.5Z" />
+    <path d="m12 20.5 4.8-7.6-4.8 2.9-4.8-2.9 4.8 7.6Z" />
   </svg>
 );
 
-export const RefreshIcon = ({ size, ...p }: P) => (
-  <svg {...base(size)} {...p} strokeWidth={2}>
-    <path d="M20 12 a8 8 0 1 1 -2.3 -5.6" />
-    <path d="M20 3.5 V8 H15.5" />
+export const FlameIcon = (p: IconProps) => (
+  <svg {...base(p)}>
+    <path d="M8.5 14.5A2.5 2.5 0 0 0 11 12c0-1.38-.5-2-1-3-1.07-2.14-.22-4.05 2-6 .5 2.5 2 4.9 4 6.5 2 1.6 3 3.5 3 5.5a7 7 0 1 1-14 0c0-1.15.43-2.29 1-3a2.5 2.5 0 0 0 2.5 2.5Z" />
   </svg>
 );
 
-export const CopyIcon = ({ size, ...p }: P) => (
-  <svg {...base(size)} {...p}>
-    <rect x="9" y="9" width="11" height="11" rx="2" />
-    <path d="M5 15 H4.5 A1.5 1.5 0 0 1 3 13.5 V4.5 A1.5 1.5 0 0 1 4.5 3 H13.5 A1.5 1.5 0 0 1 15 4.5 V5" />
+export const CheckIcon = (p: IconProps) => (
+  <svg {...base(p)}>
+    <path d="m5.5 12.5 4.3 4.3L18.5 7.5" />
   </svg>
 );
 
-export const GhostIcon = ({ size, ...p }: P) => (
-  <svg {...base(size)} {...p}>
-    <path d="M5 20 V11 A7 7 0 0 1 19 11 V20 L16.7 18 L14.3 20 L12 18 L9.7 20 L7.3 18 Z" />
-    <circle cx="9.3" cy="11" r="1.2" fill="currentColor" stroke="none" />
-    <circle cx="14.7" cy="11" r="1.2" fill="currentColor" stroke="none" />
+export const XIcon = (p: IconProps) => (
+  <svg {...base(p)}>
+    <path d="M6.5 6.5l11 11M17.5 6.5l-11 11" />
   </svg>
 );
 
-export const Spinner = ({ size = 16, className = "" }: { size?: number; className?: string }) => (
-  <svg width={size} height={size} viewBox="0 0 24 24" fill="none" className={`spin ${className}`}>
-    <circle cx="12" cy="12" r="9" stroke="currentColor" strokeOpacity="0.2" strokeWidth="2.6" />
-    <path d="M21 12 a9 9 0 0 0 -9 -9" stroke="currentColor" strokeWidth="2.6" strokeLinecap="round" />
+export const AlertIcon = (p: IconProps) => (
+  <svg {...base(p)}>
+    <path d="M10.3 4.6 2.9 17.4a1.9 1.9 0 0 0 1.6 2.9h14.9a1.9 1.9 0 0 0 1.6-2.9L13.7 4.6a1.95 1.95 0 0 0-3.4 0Z" />
+    <path d="M12 9.5v4" />
+    <path d="M12 16.6h.01" strokeWidth={2.6} />
+  </svg>
+);
+
+export const InfoIcon = (p: IconProps) => (
+  <svg {...base(p)}>
+    <circle cx="12" cy="12" r="8.2" />
+    <path d="M12 11v5" />
+    <path d="M12 7.6h.01" strokeWidth={2.6} />
+  </svg>
+);
+
+export const ClockIcon = (p: IconProps) => (
+  <svg {...base(p)}>
+    <circle cx="12" cy="12" r="8.2" />
+    <path d="M12 7.5V12l3 2" />
+  </svg>
+);
+
+export const CrownIcon = (p: IconProps) => (
+  <svg {...base(p)}>
+    <path d="m4.5 8.2 3.7 3.1L12 5.4l3.8 5.9 3.7-3.1-1.3 9.3H5.8L4.5 8.2Z" />
+    <path d="M6.5 20.5h11" strokeWidth={1.4} />
+  </svg>
+);
+
+export const SlidersIcon = (p: IconProps) => (
+  <svg {...base(p)}>
+    <path d="M4 7.5h9M17.5 7.5H20M4 16.5h2.5M11 16.5h9" />
+    <circle cx="15" cy="7.5" r="2.2" />
+    <circle cx="8.5" cy="16.5" r="2.2" />
+  </svg>
+);
+
+export const ArrowRightIcon = (p: IconProps) => (
+  <svg {...base(p)}>
+    <path d="M4.5 12h15M13.5 6l6 6-6 6" />
+  </svg>
+);
+
+export const GasIcon = (p: IconProps) => (
+  <svg {...base(p)}>
+    <path d="M5 20.5V6.3A1.8 1.8 0 0 1 6.8 4.5h5.4A1.8 1.8 0 0 1 14 6.3v14.2" />
+    <path d="M3.5 20.5h12" />
+    <path d="M14 10.5h2.2a1.3 1.3 0 0 1 1.3 1.3v5.4a1.5 1.5 0 0 0 3 0V10l-2-2" />
+    <rect x="7" y="7" width="5" height="3.6" rx="1" strokeWidth={1.4} />
+  </svg>
+);
+
+export const ShieldIcon = (p: IconProps) => (
+  <svg {...base(p)}>
+    <path d="M12 3.5 5.5 6v5.2c0 4.4 2.8 7.6 6.5 9.3 3.7-1.7 6.5-4.9 6.5-9.3V6L12 3.5Z" />
+    <path d="m9.3 11.8 2 2 3.6-3.9" strokeWidth={1.5} />
+  </svg>
+);
+
+/* brand mark — broom + spark, used in header & loader */
+export const LogoMark = ({ size = 22, className }: { size?: number; className?: string }) => (
+  <svg width={size} height={size} viewBox="0 0 24 24" fill="none" className={className}>
+    <path d="M20 4l-6.2 6.2" stroke="currentColor" strokeWidth={2} strokeLinecap="round" />
+    <path
+      d="M13.8 10.2l-7 2.9a2 2 0 0 0-.6 3.3l2.2 2.2a2 2 0 0 0 3.3-.6l2.9-7a.75.75 0 0 0-.8-.8Z"
+      fill="currentColor"
+      opacity={0.9}
+    />
+    <path d="M22.5 15.5v4M20.5 17.5h4" stroke="currentColor" strokeWidth={1.7} strokeLinecap="round" opacity={0.75} />
   </svg>
 );
