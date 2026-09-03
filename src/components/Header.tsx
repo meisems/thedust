@@ -25,7 +25,7 @@ export function Header({ theme, onToggleTheme, address, mode, isVip, onOpenWalle
       <div className="mx-auto flex h-16 max-w-6xl items-center justify-between gap-3 px-4 sm:px-6">
         {/* brand */}
         <div className="flex items-center gap-2.5">
-          <span className="squircle h-9 w-9 text-white" style={{ background: "var(--acc)", borderRadius: 13 }}>
+          <span className="squircle h-9 w-9 text-on-acc" style={{ background: "var(--acc)", borderRadius: 13 }}>
             <LogoMark size={20} />
           </span>
           <div className="leading-none">
@@ -131,7 +131,7 @@ export function Header({ theme, onToggleTheme, address, mode, isVip, onOpenWalle
               whileHover={{ scale: 1.03 }}
               whileTap={{ scale: 0.96 }}
               onClick={onOpenWallet}
-              className="flex h-9 items-center gap-2 rounded-full px-4 text-[13px] font-semibold text-white"
+              className="flex h-9 items-center gap-2 rounded-full px-4 text-[13px] font-semibold text-on-acc"
               style={{ background: "var(--acc)" }}
             >
               <WalletIcon size={15} /> attach wallet

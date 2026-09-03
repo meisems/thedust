@@ -69,7 +69,7 @@ export function StatsBanner(p: Props) {
                 whileTap={{ scale: 0.96 }}
                 transition={spring}
                 onClick={p.onAttach}
-                className="mt-4 flex items-center gap-2 rounded-full px-5 py-2.5 text-[13px] font-semibold text-white"
+                className="mt-4 flex items-center gap-2 rounded-full px-5 py-2.5 text-[13px] font-semibold text-on-acc"
                 style={{ background: "var(--acc)" }}
               >
                 <WalletIcon size={15} /> attach a wallet

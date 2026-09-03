@@ -117,7 +117,7 @@ export function DustTable(p: Props) {
             title="the explorer ghosted us"
             sub={p.error}
             action={
-              <button type="button" onClick={p.refresh} className="chip border-transparent transition-transform hover:scale-105" style={{ background: "var(--acc)", color: "#fff" }}>
+              <button type="button" onClick={p.refresh} className="chip border-transparent transition-transform hover:scale-105" style={{ background: "var(--acc)", color: "var(--on-acc)" }}>
                 try again
               </button>
             }
@@ -199,7 +199,7 @@ function FilterChip({ active, onClick, label }: { active: boolean; onClick: () =
       className="rounded-full px-3.5 py-2 font-mono text-[11px] transition-colors"
       style={{
         background: active ? "var(--acc)" : "var(--bg-soft)",
-        color: active ? "#fff" : "var(--muted)",
+        color: active ? "var(--on-acc)" : "var(--muted)",
       }}
     >
       {label}

@@ -93,7 +93,7 @@ export function SweepConsole(p: Props) {
             whileHover={n > 0 && !p.running ? { scale: 1.02 } : undefined}
             whileTap={n > 0 && !p.running ? { scale: 0.97 } : undefined}
             transition={spring}
-            className="mt-5 flex w-full items-center justify-center gap-2.5 rounded-btn px-5 py-4 font-display text-[15.5px] font-bold text-white transition-opacity disabled:opacity-45"
+            className={`mt-5 flex w-full items-center justify-center gap-2.5 rounded-btn px-5 py-4 font-display text-[15.5px] font-bold transition-opacity disabled:opacity-45 ${p.destination === "burn" ? "text-on-coral" : "text-on-acc"}`}
             style={{ background: p.destination === "burn" ? "var(--coral)" : "var(--acc)" }}
           >
             {p.destination === "burn" ? <FlameIcon size={18} /> : <BroomIcon size={18} />}

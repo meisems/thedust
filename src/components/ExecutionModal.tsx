@@ -36,7 +36,7 @@ export function ExecutionModal(p: Props) {
           exit={{ opacity: 0 }}
         >
           {/* frosted backdrop */}
-          <div className="absolute inset-0" style={{ background: "rgba(20,20,24,0.4)", backdropFilter: "blur(8px)", WebkitBackdropFilter: "blur(8px)" }} onClick={p.running ? undefined : p.onClose} />
+          <div className="absolute inset-0" style={{ background: "var(--scrim)", backdropFilter: "blur(8px)", WebkitBackdropFilter: "blur(8px)" }} onClick={p.running ? undefined : p.onClose} />
 
           <motion.div
             initial={{ opacity: 0, y: 60, scale: 0.96 }}
@@ -115,7 +115,7 @@ export function ExecutionModal(p: Props) {
                       onClick={p.onClose}
                       whileTap={{ scale: 0.95 }}
                       className="chip border-transparent transition-transform hover:scale-105"
-                      style={{ background: "var(--acc)", color: "#fff" }}
+                      style={{ background: "var(--acc)", color: "var(--on-acc)" }}
                     >
                       <CheckIcon size={13} /> nice
                     </motion.button>

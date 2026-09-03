@@ -135,3 +135,13 @@ export function sanitizeLabel(input: unknown, max = 24): string {
   const clean = s.replace(HOSTILE_RE, "").replace(/\s+/g, " ").trim();
   return clean.length > max ? clean.slice(0, max - 1) + "…" : clean || "???";
 }
+
+/** Blockscout page listing every transaction that touched the DEX router — the public, all-users feed */
+export function routerTxFeed(): string {
+  return `${BLOCKSCOUT_API}/addresses/${ADDRESSES.dexRouter}/transactions`;
+}
+
+/** human link to the router's on-chain history */
+export function routerExplorerUrl(): string {
+  return `${EXPLORER_URL}/address/${ADDRESSES.dexRouter}`;
+}

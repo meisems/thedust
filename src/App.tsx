@@ -13,10 +13,12 @@ import { StatsBanner } from "./components/StatsBanner";
 import { DestinationSelector } from "./components/DestinationSelector";
 import { DustTable } from "./components/DustTable";
 import { SweepConsole, type FeedItem } from "./components/SweepConsole";
+import { LedgerPanel } from "./components/LedgerPanel";
+import { anonAddress, loadLedger, saveLedger, type LedgerEntry } from "./lib/ledger";
 import { ExecutionModal } from "./components/ExecutionModal";
 import { ToastProvider, useToast } from "./components/Toasts";
 import { Loader } from "./components/Loader";
-import { spring } from "./components/ui";
+import { Reveal, spring } from "./components/ui";
 import { AlertIcon, ShieldIcon, SparkIcon, WalletIcon } from "./components/icons";
 
 const queryClient = new QueryClient();
@@ -67,6 +69,8 @@ function Shell() {
   const [session, setSession] = useState({ usd: 0, count: 0 });
   const [feed, setFeed] = useState<FeedItem[]>([]);
   const [liveSweep, setLiveSweep] = useState(0);
+  /* this browser's own sweeps — persisted, shown in the public ledger */
+  const [ledgerOwn, setLedgerOwn] = useState<LedgerEntry[]>(() => loadLedger());
 
   /* ------------------------------ data ------------------------------ */
   const dust = useDustTokens({ address, mode });
@@ -200,6 +204,29 @@ function Shell() {
       queue.steps.filter((st) => st.status === "confirmed").forEach((st) => next.delete(st.tokenAddress));
       return next;
     });
+    /* record this sweep in the public ledger */
+    if (s.confirmed > 0 && address) {
+      const confirmedMain = queue.steps.filter((st) => st.status === "confirmed" && (st.kind === "swap" || st.kind === "burn"));
+      const symbols = [...new Set(confirmedMain.map((st) => st.symbol))];
+      const entry: LedgerEntry = {
+        id: `own-${Date.now()}`,
+        ts: Date.now(),
+        hash: mode === "live" ? confirmedMain.find((st) => st.hash)?.hash : undefined,
+        wallet: anonAddress(address),
+        walletAddr: address,
+        symbols,
+        count: symbols.length,
+        usd: Number(s.usdSwept.toFixed(2)),
+        destination,
+        own: true,
+        live: mode === "live",
+      };
+      setLedgerOwn((prev) => {
+        const next = [entry, ...prev].slice(0, 60);
+        saveLedger(next);
+        return next;
+      });
+    }
     if (s.failed === 0 && s.confirmed > 0) {
       toast("ok", destination === "burn" ? "sent to the void." : "dust consolidated.", `${s.confirmed} token${s.confirmed > 1 ? "s" : ""} · +$${s.usdSwept.toFixed(2)} in ${destLabel}. you're welcome.`);
     } else if (s.failed > 0) {
@@ -234,11 +261,11 @@ function Shell() {
       <div className="pointer-events-none fixed inset-0 z-0 overflow-hidden">
         <div
           className="absolute -left-32 -top-32 h-[480px] w-[480px] rounded-full"
-          style={{ background: "var(--acc-soft)", filter: "blur(90px)", opacity: 0.55 }}
+          style={{ background: "var(--acc-soft)", filter: "blur(90px)", opacity: "var(--tint-o)" }}
         />
         <div
           className="absolute -right-40 top-1/3 h-[420px] w-[420px] rounded-full"
-          style={{ background: "var(--gold-soft)", filter: "blur(100px)", opacity: 0.5 }}
+          style={{ background: "var(--gold-soft)", filter: "blur(100px)", opacity: "var(--tint-o)" }}
         />
         {motes.map((m) => (
           <span
@@ -347,6 +374,13 @@ function Shell() {
           </div>
         </div>
 
+        {/* the public ledger — every sweep by every wallet */}
+        <div className="mt-6">
+          <Reveal>
+            <LedgerPanel ownEntries={ledgerOwn} mode={mode} />
+          </Reveal>
+        </div>
+
         {/* footer */}
         <footer className="mt-14 flex flex-wrap items-center justify-between gap-3 border-t pt-6" style={{ borderColor: "var(--line)" }}>
           <p className="font-mono text-[11px] text-faint">dustsweep — a broom for your blockchain regrets.</p>
@@ -380,7 +414,7 @@ function Shell() {
       <AnimatePresence>
         {walletOpen && (
           <motion.div className="fixed inset-0 z-[100] flex items-end justify-center p-4 sm:items-center" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}>
-            <div className="absolute inset-0" style={{ background: "rgba(20,20,24,0.4)", backdropFilter: "blur(8px)", WebkitBackdropFilter: "blur(8px)" }} onClick={() => setWalletOpen(false)} />
+            <div className="absolute inset-0" style={{ background: "var(--scrim)", backdropFilter: "blur(8px)", WebkitBackdropFilter: "blur(8px)" }} onClick={() => setWalletOpen(false)} />
             <motion.div
               initial={{ opacity: 0, y: 60, scale: 0.96 }}
               animate={{ opacity: 1, y: 0, scale: 1 }}
