@@ -1,5 +1,5 @@
 import { useCallback, useMemo, useRef, useState } from "react";
-import { maxUint256, type PublicClient, type WalletClient } from "viem";
+import { isAddress, maxUint256, type PublicClient, type WalletClient } from "viem";
 import {
   ADDRESSES,
   erc20Abi,
@@ -161,6 +161,17 @@ export function useSweepQueue({ mode, address, isVip, destination, publicClient,
         if (!walletClient || !publicClient || !address) throw new Error("Wallet unavailable — reconnect on Chain 4663");
         const account = walletClient.account;
         if (!account) throw new Error("No active account");
+        /* paranoid: never send value against an unverified address */
+        if (
+          !isAddress(token.address) ||
+          !isAddress(ADDRESSES.dexRouter) ||
+          !isAddress(ADDRESSES.platformToken) ||
+          !isAddress(ADDRESSES.weth) ||
+          !isAddress(ADDRESSES.dead) ||
+          !isAddress(account.address)
+        ) {
+          throw new Error("address failed checksum verification — refusing to sign");
+        }
         const common = { chain: robinhoodChain, account } as const;
 
         let hash: `0x${string}`;

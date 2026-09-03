@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { BLOCKSCOUT_API, DUST_CAP_USD_DEFAULT, DUST_FLOOR_USD } from "../lib/chain";
+import { isAddress } from "viem";
+import { BLOCKSCOUT_API, DUST_CAP_USD_DEFAULT, DUST_FLOOR_USD, sanitizeLabel } from "../lib/chain";
 import { buildDemoTokens, DEMO_IGNORED, rand, type DustToken } from "../lib/demo";
 
 export type DustFilter = "all" | "dead";
@@ -51,17 +52,24 @@ export function useDustTokens({ address, mode }: UseDustTokensArgs) {
       const items: any[] = json?.items ?? [];
 
       const parsed: DustToken[] = items
-        .filter((it) => it?.value && BigInt(it.value) > 0n && it?.token)
+        .filter((it) => {
+          if (!it?.value || !it?.token) return false;
+          try {
+            return BigInt(it.value) > 0n && isAddress(String(it.token.address ?? ""));
+          } catch {
+            return false;
+          }
+        })
         .map((it) => {
           const t = it.token;
-          const decimals = Number(t.decimals ?? 18);
+          const decimals = Math.min(36, Math.max(0, Number(t.decimals ?? 18)));
           const balance = Number(BigInt(it.value)) / 10 ** decimals;
           const rate = typeof t.exchange_rate === "string" ? parseFloat(t.exchange_rate) : null;
           const usdValue = rate && isFinite(rate) ? balance * rate : 0;
           return {
             address: t.address,
-            name: t.name ?? "Unknown Token",
-            symbol: t.symbol ?? "???",
+            name: sanitizeLabel(t.name ?? "unknown token", 32),
+            symbol: sanitizeLabel(t.symbol ?? "???", 12),
             decimals,
             balanceRaw: BigInt(it.value),
             balance,

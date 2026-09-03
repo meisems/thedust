@@ -37,7 +37,7 @@ export const ADDRESSES = {
   /** Wrapped ETH on Robinhood Chain */
   weth: "0x4200000000000000000000000000000000000006",
   /** $SWEEP — platform token (deployed via Pons Family) */
-  platformToken: "0x5weepa11c0ffeeb00c0ffee4663d157b00d5ea11",
+  platformToken: "0x5eefa11c0ffeeb00c0ffee4663d157b00d5ea11",
   /** Dead / burn address */
   dead: "0x000000000000000000000000000000000000dead",
 } as const;
@@ -115,4 +115,23 @@ export function explorerTx(hash: string): string {
 
 export function explorerAddress(addr: string): string {
   return `${EXPLORER_URL}/address/${addr}`;
+}
+
+export function explorerApprovals(addr: string): string {
+  return `${EXPLORER_URL}/address/${addr}#token_approvals`;
+}
+
+/* ------------------------------------------------------------------ */
+/*  Security — hostile input from public indexers must never reach     */
+/*  the DOM raw: strip control chars + RTL overrides, cap length.      */
+/* ------------------------------------------------------------------ */
+
+/* eslint-disable no-control-regex */
+const HOSTILE_RE = /[\u0000-\u001F\u007F\u200B-\u200F\u202A-\u202E\u2060-\u2064\uFEFF]/g;
+/* eslint-enable no-control-regex */
+
+export function sanitizeLabel(input: unknown, max = 24): string {
+  const s = typeof input === "string" ? input : "";
+  const clean = s.replace(HOSTILE_RE, "").replace(/\s+/g, " ").trim();
+  return clean.length > max ? clean.slice(0, max - 1) + "…" : clean || "???";
 }
