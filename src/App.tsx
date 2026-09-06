@@ -27,7 +27,7 @@ const MARQUEE = [
   "dust is just money you forgot about",
   "the average ape wallet hides 10+ tokens worth under $5",
   "sweeping to $SWEEP is 0% fee — forever, obviously",
-  "gas on chain 4663 costs less than a gumball",
+  "gas on Robinhood Chain costs less than a gumball",
   "burned tokens live at 0x…dEaD. visit them sometime",
   "your bags are smaller than you remember",
   "one broom. three exits. zero contracts",
@@ -135,7 +135,7 @@ function Shell() {
       setMode("live");
       setAddress(res.accounts[0]);
       setWalletOpen(false);
-      toast("ok", "wallet attached", `chain 4663 · ${res.accounts[0].slice(0, 8)}…`);
+      toast("ok", "wallet attached", `Robinhood Chain · ${res.accounts[0].slice(0, 8)}…`);
     } catch (e: any) {
       toast("err", "connection refused", e?.message?.slice(0, 90) ?? "the wallet said no. rude.");
     } finally {
@@ -383,7 +383,7 @@ function Shell() {
 
         {/* footer */}
         <footer className="mt-14 flex flex-wrap items-center justify-between gap-3 border-t pt-6" style={{ borderColor: "var(--line)" }}>
-          <p className="font-mono text-[11px] text-faint">dustsweep — a broom for your blockchain regrets.</p>
+          <p className="font-mono text-[11px] text-faint">ponsweep — a broom for your blockchain regrets.</p>
           <div className="flex items-center gap-4 font-mono text-[11px]">
             <a className="text-muted transition-colors hover:text-ink" href={EXPLORER_URL} target="_blank" rel="noreferrer">
               blockscout
@@ -391,7 +391,7 @@ function Shell() {
             <a className="text-muted transition-colors hover:text-ink" href={`${EXPLORER_URL}/address/${ADDRESSES.dexRouter}`} target="_blank" rel="noreferrer">
               router
             </a>
-            <span className="text-faint">chain 4663 · no contracts · no custody</span>
+            <span className="text-faint">Robinhood Chain · no contracts · no custody</span>
           </div>
         </footer>
       </motion.main>
@@ -439,7 +439,7 @@ function Shell() {
                   bg="var(--sky-soft)"
                   fg="var(--sky-ink)"
                   title="browser wallet"
-                  sub={connecting ? "asked nicely… check the popup" : "must be on robinhood chain · 4663"}
+                  sub={connecting ? "asked nicely… check the popup" : "must be on Robinhood Chain"}
                   onClick={connectLive}
                   busy={connecting}
                 />

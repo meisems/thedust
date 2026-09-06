@@ -17,7 +17,7 @@ const DEADPAN = [
   "ok. ready when you are.",
 ];
 
-const WORD = "dustsweep";
+const WORD = "ponsweep";
 
 export function Loader({ onDone }: { onDone: () => void }) {
   const [phase, setPhase] = useState(0); // 0 draw · 1 wordmark · 2 deadpan · 3 exit
