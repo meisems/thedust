@@ -65,7 +65,7 @@ export const DUST_FLOOR_USD = 0.05;
 export const DUST_CAP_USD_DEFAULT = 5.0;
 
 /* ------------------------------------------------------------------ */
-/*  ABIs — only the functions DustSweep touches (zero custom contracts)*/
+/*  ABIs — only the functions PonSweep touches (zero custom contracts)*/
 /* ------------------------------------------------------------------ */
 
 export const erc20Abi = parseAbi([

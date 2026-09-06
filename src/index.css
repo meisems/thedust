@@ -1,77 +1,85 @@
 @import "tailwindcss";
 
 /* ------------------------------------------------------------------ */
-/*  dustsweep design tokens — "soft, minimal, hint of meme"            */
-/*  light: oat milk / marshmallow · dark: velvety charcoal             */
+/*  ponsweep design tokens — OKX inspired dark theme                   */
+/*  Primary: #00D084 (OKX Green), Dark: #0b0b0f, #1a1a1f               */
 /* ------------------------------------------------------------------ */
 
 :root {
+  /* OKX-inspired dark palette - default */
+  --bg: #0b0b0f;
+  --bg-soft: #121217;
+  --card: #1a1a1f;
+  --card-soft: rgba(26, 26, 31, 0.85);
+  --scrim: rgba(0, 0, 0, 0.6);
+  --tint-o: 0.25;
+  
+  /* Text colors */
+  --ink: #ffffff;
+  --ink-2: #e0e0e0;
+  --muted: #9ca3af;
+  --faint: #6b7280;
+  
+  /* Borders */
+  --line: rgba(255, 255, 255, 0.08);
+  --line-strong: rgba(255, 255, 255, 0.15);
+  
+  /* Primary accent - OKX Green */
+  --acc: #00D084;
+  --acc-ink: #00a86a;
+  --acc-soft: rgba(0, 208, 132, 0.12);
+  --on-acc: #000000;
+  
+  /* Secondary accents */
+  --gold: #ffb800;
+  --gold-ink: #cc9300;
+  --gold-soft: rgba(255, 184, 0, 0.12);
+  --coral: #ff6b6b;
+  --coral-ink: #ff5252;
+  --coral-soft: rgba(255, 107, 107, 0.12);
+  --sky: #3b82f6;
+  --sky-ink: #2563eb;
+  --sky-soft: rgba(59, 130, 246, 0.12);
+  --on-coral: #ffffff;
+  
+  /* Shadows */
+  --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.3);
+  --shadow-md: 0 4px 12px rgba(0, 0, 0, 0.4);
+  --shadow-lg: 0 8px 24px rgba(0, 0, 0, 0.5);
+}
+
+[data-theme="light"] {
   --bg: #faf9f7;
   --bg-soft: #f3f1ec;
   --card: #ffffff;
-  --card-soft: rgba(255, 255, 255, 0.72);
-  --scrim: rgba(24, 24, 27, 0.32);
-  --tint-o: 0.55;
-  --on-acc: #ffffff;
+  --card-soft: rgba(255, 255, 255, 0.85);
   --ink: #18181b;
   --ink-2: #41414a;
   --muted: #77777f;
   --faint: #ababb3;
-  --line: rgba(24, 24, 27, 0.07);
-  --line-strong: rgba(24, 24, 27, 0.13);
-
-  --acc: #23935a;
-  --acc-ink: #1b7848;
-  --acc-soft: #e3f2e9;
+  --line: rgba(24, 24, 27, 0.08);
+  --line-strong: rgba(24, 24, 27, 0.15);
+  
+  --acc: #00a86a;
+  --acc-ink: #008555;
+  --acc-soft: rgba(0, 208, 132, 0.12);
+  --gold: #cc9300;
+  --gold-ink: #a07300;
+  --gold-soft: rgba(255, 184, 0, 0.12);
+  --coral: #ff5252;
+  --coral-ink: #ff3b3b;
+  --coral-soft: rgba(255, 107, 107, 0.12);
+  --sky: #2563eb;
+  --sky-ink: #1d4ed8;
+  --sky-soft: rgba(59, 130, 246, 0.12);
   --on-acc: #ffffff;
   --on-coral: #ffffff;
-  --gold: #d9930d;
-  --gold-ink: #a06b08;
-  --gold-soft: #faf0d8;
-  --coral: #de5f56;
-  --coral-ink: #bf463e;
-  --coral-soft: #fae7e3;
-  --sky: #3e8fd8;
-  --sky-ink: #2f73af;
-  --sky-soft: #e3f0fb;
-
-  --shadow-sm: 0 1px 2px rgba(24, 24, 27, 0.04);
-  --shadow-md: 0 10px 30px -10px rgba(24, 24, 27, 0.1), 0 2px 8px -4px rgba(24, 24, 27, 0.05);
-  --shadow-lg: 0 30px 70px -24px rgba(24, 24, 27, 0.18), 0 6px 20px -10px rgba(24, 24, 27, 0.07);
-}
-
-[data-theme="dark"] {
-  --bg: #131318;
-  --bg-soft: #1a1a21;
-  --card: #1c1c24;
-  --card-soft: rgba(28, 28, 36, 0.72);
-  --ink: #ececee;
-  --ink-2: #c9c9d1;
-  --muted: #9b9ba6;
-  --faint: #67676f;
-  --line: rgba(255, 255, 255, 0.07);
-  --line-strong: rgba(255, 255, 255, 0.13);
-
-  --acc: #4cc38a;
-  --acc-ink: #7ad8ab;
-  --acc-soft: rgba(76, 195, 138, 0.13);
-  --gold: #e8b04b;
-  --gold-ink: #f0c679;
-  --gold-soft: rgba(232, 176, 75, 0.13);
-  --coral: #f0837e;
-  --coral-ink: #f5a4a0;
-  --coral-soft: rgba(240, 131, 126, 0.13);
-  --sky: #6fb3ec;
-  --sky-ink: #9ccaf3;
-  --sky-soft: rgba(111, 179, 236, 0.13);
-  --on-acc: #0b2b1a;
-  --on-coral: #3a1210;
-  --scrim: rgba(6, 6, 9, 0.58);
-  --tint-o: 0.3;
-
-  --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.25);
-  --shadow-md: 0 14px 36px -14px rgba(0, 0, 0, 0.5), 0 2px 8px -4px rgba(0, 0, 0, 0.3);
-  --shadow-lg: 0 34px 80px -28px rgba(0, 0, 0, 0.65), 0 8px 24px -12px rgba(0, 0, 0, 0.4);
+  --scrim: rgba(24, 24, 27, 0.4);
+  --tint-o: 0.4;
+  
+  --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.05);
+  --shadow-md: 0 4px 12px rgba(0, 0, 0, 0.08);
+  --shadow-lg: 0 8px 24px rgba(0, 0, 0, 0.12);
 }
 
 @theme {
@@ -103,7 +111,7 @@
   --color-sky: var(--sky);
   --color-sky-ink: var(--sky-ink);
   --color-sky-soft: var(--sky-soft);
-
+  
   --radius-card: 1.6rem;
   --radius-btn: 1.1rem;
 }
@@ -271,7 +279,7 @@
 }
 
 /* ------------------------------------------------------------------ */
-/*  smooth theme flip — unlayered so it wins; lives 520ms per toggle   */
+/*  smooth theme flip                                                  */
 /* ------------------------------------------------------------------ */
 
 html.theme-anim *,
@@ -319,10 +327,10 @@ html.theme-anim *::after {
 @keyframes ds-pulse {
   0%,
   100% {
-    box-shadow: 0 0 0 0 rgba(35, 147, 90, 0.35);
+    box-shadow: 0 0 0 0 rgba(0, 208, 132, 0.35);
   }
   60% {
-    box-shadow: 0 0 0 6px rgba(35, 147, 90, 0);
+    box-shadow: 0 0 0 6px rgba(0, 208, 132, 0);
   }
 }
 

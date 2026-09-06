@@ -22,7 +22,7 @@ export interface LedgerEntry {
   live: boolean; // sourced from on-chain feed vs simulated
 }
 
-const KEY = "dustsweep.ledger.v1";
+const KEY = "ponsweep.ledger.v1";
 const MAX = 80;
 
 export function anonAddress(a: string): string {

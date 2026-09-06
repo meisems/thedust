@@ -4,7 +4,7 @@ import { robinhoodChain } from "./chain";
 
 /* ------------------------------------------------------------------ */
 /*  wagmi v2 config — single chain, public RPC, no custom contracts.   */
-/*  Every read/write DustSweep performs goes through this transport.   */
+/*  Every read/write PonSweep performs goes through this transport.   */
 /* ------------------------------------------------------------------ */
 
 export const wagmiConfig = createConfig({

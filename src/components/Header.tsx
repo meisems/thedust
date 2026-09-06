@@ -1,7 +1,6 @@
 import { useState } from "react";
 import { AnimatePresence, motion } from "framer-motion";
 import { spring, Monogram } from "./ui";
-import { ChevronDownIcon, CopyIcon, CrownIcon, ExternalIcon, LogoMark, MoonIcon, SunIcon, WalletIcon, XIcon } from "./icons";
 import { EXPLORER_URL, shortAddr } from "../lib/chain";
 
 interface Props {
@@ -26,12 +25,12 @@ export function Header({ theme, onToggleTheme, address, mode, isVip, onOpenWalle
         {/* brand */}
         <div className="flex items-center gap-2.5">
           <span className="squircle h-9 w-9 text-on-acc" style={{ background: "var(--acc)", borderRadius: 13 }}>
-            <LogoMark size={20} />
+            <i className="ph ph-broom text-xl" style={{ color: "var(--on-acc)" }}></i>
           </span>
           <div className="leading-none">
-            <span className="font-display text-[17px] font-bold tracking-tight text-ink">dustsweep</span>
+            <span className="font-display text-[17px] font-bold tracking-tight text-ink">ponsweep</span>
             <span className="mt-0.5 block font-mono text-[9.5px] uppercase tracking-[0.16em] text-faint">
-              robinhood chain · 4663
+              $SWEEP
             </span>
           </div>
         </div>
@@ -39,12 +38,12 @@ export function Header({ theme, onToggleTheme, address, mode, isVip, onOpenWalle
         <div className="flex items-center gap-2">
           {mode === "demo" && (
             <span className="chip hidden border-transparent sm:inline-flex" style={{ background: "var(--gold-soft)", color: "var(--gold-ink)" }}>
-              demo money
+              demo
             </span>
           )}
           {isVip && (
             <span className="chip hidden border-transparent md:inline-flex" style={{ background: "var(--gold-soft)", color: "var(--gold-ink)" }}>
-              <CrownIcon size={13} /> vip
+              <i className="ph-fill ph-crown text-sm"></i> vip
             </span>
           )}
 
@@ -62,15 +61,15 @@ export function Header({ theme, onToggleTheme, address, mode, isVip, onOpenWalle
             className="relative flex h-9 w-[62px] items-center justify-between rounded-full border px-2 outline-none transition-colors hover:border-line-strong"
             style={{ borderColor: "var(--line)", background: "var(--bg-soft)" }}
           >
-            <SunIcon size={14} className={theme === "light" ? "text-gold" : "text-faint"} />
-            <MoonIcon size={14} className={theme === "dark" ? "text-sky" : "text-faint"} />
+            <i className={`ph ${theme === "light" ? "ph-sun" : "ph-sun-dim"} text-sm ${theme === "light" ? "text-gold" : "text-faint"}`}></i>
+            <i className={`ph ${theme === "dark" ? "ph-moon" : "ph-moon-stars"} text-sm ${theme === "dark" ? "text-sky" : "text-faint"}`}></i>
             <motion.span
               className="absolute left-1 top-1 flex h-7 w-7 items-center justify-center rounded-full"
               style={{ background: "var(--card)", boxShadow: "var(--shadow-sm)" }}
               animate={{ x: theme === "light" ? 0 : 30 }}
               transition={spring}
             >
-              {theme === "light" ? <SunIcon size={13} className="text-gold" /> : <MoonIcon size={13} className="text-sky" />}
+              <i className={`ph ${theme === "light" ? "ph-sun" : "ph-moon"} text-xs ${theme === "light" ? "text-gold" : "text-sky"}`}></i>
             </motion.span>
           </button>
 
@@ -86,8 +85,8 @@ export function Header({ theme, onToggleTheme, address, mode, isVip, onOpenWalle
               >
                 <Monogram symbol={address.slice(2, 4)} hue={158} size={28} />
                 <span className="font-mono text-xs text-ink-2">{shortAddr(address)}</span>
-                <motion.span animate={{ rotate: menu ? 180 : 0 }} transition={spring} className="text-faint">
-                  <ChevronDownIcon size={14} />
+                <motion.span animate={{ rotate: menu ? 180 : 0 }} transition={spring}>
+                  <i className="ph ph-caret-down text-sm text-faint"></i>
                 </motion.span>
               </motion.button>
 
@@ -103,7 +102,7 @@ export function Header({ theme, onToggleTheme, address, mode, isVip, onOpenWalle
                       className="card absolute right-0 top-11 z-20 w-52 overflow-hidden !rounded-2xl p-1.5"
                     >
                       <MenuItem
-                        icon={<CopyIcon size={15} />}
+                        icon={<i className="ph ph-copy text-sm"></i>}
                         label="copy address"
                         onClick={() => {
                           navigator.clipboard?.writeText(address).catch(() => {});
@@ -117,9 +116,9 @@ export function Header({ theme, onToggleTheme, address, mode, isVip, onOpenWalle
                         rel="noreferrer"
                         onClick={() => setMenu(false)}
                       >
-                        <ExternalIcon size={15} className="text-muted" /> view on blockscout
+                        <i className="ph ph-arrow-square-out text-sm text-muted"></i> view on blockscout
                       </a>
-                      <MenuItem icon={<XIcon size={15} />} label="disconnect" danger onClick={onDisconnect} />
+                      <MenuItem icon={<i className="ph ph-sign-out text-sm"></i>} label="disconnect" danger onClick={onDisconnect} />
                     </motion.div>
                   </>
                 )}
@@ -134,7 +133,7 @@ export function Header({ theme, onToggleTheme, address, mode, isVip, onOpenWalle
               className="flex h-9 items-center gap-2 rounded-full px-4 text-[13px] font-semibold text-on-acc"
               style={{ background: "var(--acc)" }}
             >
-              <WalletIcon size={15} /> attach wallet
+              <i className="ph ph-wallet text-sm"></i> connect
             </motion.button>
           )}
         </div>
