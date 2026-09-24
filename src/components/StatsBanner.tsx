@@ -74,7 +74,7 @@ export function StatsBanner(p: Props) {
                 transition={spring}
                 onClick={p.onAttach}
                 className="portal-gradient mt-4 flex items-center gap-2 rounded-full px-5 py-2.5 text-[13px] font-semibold"
-                style={{ color: "#08130a", boxShadow: "0 4px 14px rgba(182,255,61,0.22)" }}
+                style={{ color: "var(--on-acc)", boxShadow: "0 4px 14px rgba(var(--acc-rgb), 0.22)" }}
               >
                 <WalletIcon size={15} /> attach a wallet
               </motion.button>
@@ -107,5 +107,3 @@ function Stat({ icon, tone, fg, label, value, hint }: { icon: React.ReactNode; t
     </div>
   );
 }
-
-
