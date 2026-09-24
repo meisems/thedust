@@ -265,7 +265,7 @@ function Shell() {
         />
         <div
           className="absolute -right-40 top-1/3 h-[420px] w-[420px] rounded-full"
-          style={{ background: "rgba(194, 75, 255, 0.1)", filter: "blur(100px)", opacity: "var(--tint-o)" }}
+          style={{ background: "var(--portal-b-soft)", filter: "blur(100px)", opacity: "var(--tint-o)" }}
         />
         {motes.map((m) => (
           <span
