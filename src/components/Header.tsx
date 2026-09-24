@@ -24,8 +24,8 @@ export function Header({ theme, onToggleTheme, address, mode, isVip, onOpenWalle
       <div className="mx-auto flex h-16 max-w-6xl items-center justify-between gap-3 px-4 sm:px-6">
         {/* brand */}
         <div className="flex items-center gap-2.5">
-          <span className="squircle portal-gradient h-9 w-9 text-on-acc" style={{ borderRadius: 13, boxShadow: "0 0 0 1px var(--line), 0 4px 14px rgba(182,255,61,0.18)" }}>
-            <i className="ph ph-broom text-xl" style={{ color: "#08130a" }}></i>
+          <span className="squircle portal-gradient h-9 w-9 text-on-acc" style={{ borderRadius: 13, boxShadow: "0 0 0 1px var(--line), 0 4px 14px rgba(var(--acc-rgb), 0.18)" }}>
+            <i className="ph ph-broom text-xl" style={{ color: "var(--on-acc)" }}></i>
           </span>
           <div className="leading-none">
             <span className="font-display text-[17px] font-bold tracking-tight text-ink">ponsweep</span>
@@ -131,7 +131,7 @@ export function Header({ theme, onToggleTheme, address, mode, isVip, onOpenWalle
               whileTap={{ scale: 0.96 }}
               onClick={onOpenWallet}
               className="portal-gradient flex h-9 items-center gap-2 rounded-full px-4 text-[13px] font-semibold"
-              style={{ color: "#08130a", boxShadow: "0 4px 14px rgba(182,255,61,0.22)" }}
+              style={{ color: "var(--on-acc)", boxShadow: "0 4px 14px rgba(var(--acc-rgb), 0.22)" }}
             >
               <i className="ph ph-wallet text-sm"></i> connect
             </motion.button>
