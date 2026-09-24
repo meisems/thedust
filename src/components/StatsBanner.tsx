@@ -29,8 +29,12 @@ export function StatsBanner(p: Props) {
           style={{ background: "var(--acc-soft)", filter: "blur(60px)", opacity: 0.7 }}
         />
 
-        <div className="relative flex items-center justify-between gap-3">
+        <div className="relative flex flex-wrap items-center gap-2.5">
           <span className="lbl">total stranded dust</span>
+          <span className="sticker">
+            <i className="ph ph-check-circle text-[13px]" style={{ color: "var(--acc)" }}></i> 0% mercy
+          </span>
+          <span className="flex-1" />
           {p.loading ? (
             <StatusPill tone="sky">
               <RadarIcon size={12} /> sniffing balances
@@ -69,8 +73,8 @@ export function StatsBanner(p: Props) {
                 whileTap={{ scale: 0.96 }}
                 transition={spring}
                 onClick={p.onAttach}
-                className="mt-4 flex items-center gap-2 rounded-full px-5 py-2.5 text-[13px] font-semibold text-on-acc"
-                style={{ background: "var(--acc)" }}
+                className="portal-gradient mt-4 flex items-center gap-2 rounded-full px-5 py-2.5 text-[13px] font-semibold"
+                style={{ color: "#08130a", boxShadow: "0 4px 14px rgba(182,255,61,0.22)" }}
               >
                 <WalletIcon size={15} /> attach a wallet
               </motion.button>

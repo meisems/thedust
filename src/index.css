@@ -1,85 +1,93 @@
 @import "tailwindcss";
 
 /* ------------------------------------------------------------------ */
-/*  ponsweep design tokens — OKX inspired dark theme                   */
-/*  Primary: #00D084 (OKX Green), Dark: #0b0b0f, #1a1a1f               */
+/*  ponsweep design tokens — degen-grade, still on the clock            */
+/*  Primary: #B6FF3D (broom-lime), Portal: lime → violet                */
 /* ------------------------------------------------------------------ */
 
 :root {
-  /* OKX-inspired dark palette - default */
-  --bg: #0b0b0f;
-  --bg-soft: #121217;
-  --card: #1a1a1f;
-  --card-soft: rgba(26, 26, 31, 0.85);
-  --scrim: rgba(0, 0, 0, 0.6);
-  --tint-o: 0.25;
-  
+  /* near-black with a cold portal undertone - default */
+  --bg: #08080d;
+  --bg-soft: #101017;
+  --card: #16161f;
+  --card-soft: rgba(22, 22, 31, 0.85);
+  --scrim: rgba(0, 0, 0, 0.65);
+  --tint-o: 0.3;
+
   /* Text colors */
-  --ink: #ffffff;
-  --ink-2: #e0e0e0;
-  --muted: #9ca3af;
-  --faint: #6b7280;
-  
+  --ink: #f6f7f2;
+  --ink-2: #dcdde3;
+  --muted: #9a9baa;
+  --faint: #6b6c7c;
+
   /* Borders */
-  --line: rgba(255, 255, 255, 0.08);
-  --line-strong: rgba(255, 255, 255, 0.15);
-  
-  /* Primary accent - OKX Green */
-  --acc: #00D084;
-  --acc-ink: #00a86a;
-  --acc-soft: rgba(0, 208, 132, 0.12);
-  --on-acc: #000000;
-  
+  --line: rgba(246, 247, 242, 0.09);
+  --line-strong: rgba(246, 247, 242, 0.18);
+
+  /* Primary accent - broom-lime */
+  --acc: #b6ff3d;
+  --acc-ink: #8fd400;
+  --acc-soft: rgba(182, 255, 61, 0.13);
+  --on-acc: #08130a;
+
+  /* Portal duo — spent only on the loader & one hero moment */
+  --portal-a: #b6ff3d;
+  --portal-b: #c24bff;
+  --portal-c: #35d0ff;
+
   /* Secondary accents */
-  --gold: #ffb800;
-  --gold-ink: #cc9300;
-  --gold-soft: rgba(255, 184, 0, 0.12);
-  --coral: #ff6b6b;
-  --coral-ink: #ff5252;
-  --coral-soft: rgba(255, 107, 107, 0.12);
-  --sky: #3b82f6;
-  --sky-ink: #2563eb;
-  --sky-soft: rgba(59, 130, 246, 0.12);
+  --gold: #ffc93d;
+  --gold-ink: #d69f00;
+  --gold-soft: rgba(255, 201, 61, 0.13);
+  --coral: #ff5d7a;
+  --coral-ink: #ff3f63;
+  --coral-soft: rgba(255, 93, 122, 0.13);
+  --sky: #4fc8ff;
+  --sky-ink: #2ba9e8;
+  --sky-soft: rgba(79, 200, 255, 0.13);
   --on-coral: #ffffff;
-  
-  /* Shadows */
-  --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.3);
-  --shadow-md: 0 4px 12px rgba(0, 0, 0, 0.4);
-  --shadow-lg: 0 8px 24px rgba(0, 0, 0, 0.5);
+
+  /* Shadows — punchier, slightly tinted */
+  --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.35);
+  --shadow-md: 0 6px 16px rgba(0, 0, 0, 0.45);
+  --shadow-lg: 0 10px 32px rgba(0, 0, 0, 0.55);
 }
 
 [data-theme="light"] {
-  --bg: #faf9f7;
-  --bg-soft: #f3f1ec;
+  --bg: #faf9f4;
+  --bg-soft: #f1efe6;
   --card: #ffffff;
   --card-soft: rgba(255, 255, 255, 0.85);
-  --ink: #18181b;
-  --ink-2: #41414a;
-  --muted: #77777f;
-  --faint: #ababb3;
-  --line: rgba(24, 24, 27, 0.08);
-  --line-strong: rgba(24, 24, 27, 0.15);
-  
-  --acc: #00a86a;
-  --acc-ink: #008555;
-  --acc-soft: rgba(0, 208, 132, 0.12);
+  --ink: #14150f;
+  --ink-2: #3c3d34;
+  --muted: #74756a;
+  --faint: #a9aa9d;
+  --line: rgba(20, 21, 15, 0.08);
+  --line-strong: rgba(20, 21, 15, 0.16);
+
+  --acc: #62a300;
+  --acc-ink: #487800;
+  --acc-soft: rgba(98, 163, 0, 0.13);
+  --portal-a: #62a300;
+  --portal-b: #9a2fd6;
+  --portal-c: #0e93c9;
   --gold: #cc9300;
   --gold-ink: #a07300;
-  --gold-soft: rgba(255, 184, 0, 0.12);
-  --coral: #ff5252;
-  --coral-ink: #ff3b3b;
-  --coral-soft: rgba(255, 107, 107, 0.12);
-  --sky: #2563eb;
-  --sky-ink: #1d4ed8;
-  --sky-soft: rgba(59, 130, 246, 0.12);
+  --gold-soft: rgba(204, 147, 0, 0.13);
+  --coral: #e0405f;
+  --coral-ink: #c22e4a;
+  --coral-soft: rgba(224, 64, 95, 0.13);
+  --sky: #1c86d1;
+  --sky-ink: #14679e;
+  --sky-soft: rgba(28, 134, 209, 0.13);
   --on-acc: #ffffff;
   --on-coral: #ffffff;
-  --scrim: rgba(24, 24, 27, 0.4);
+  --scrim: rgba(20, 21, 15, 0.42);
   --tint-o: 0.4;
-  
-  --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.05);
-  --shadow-md: 0 4px 12px rgba(0, 0, 0, 0.08);
-  --shadow-lg: 0 8px 24px rgba(0, 0, 0, 0.12);
+
+  --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.06);
+  --shadow-md: 0 4px 12px rgba(0, 0, 0, 0.09);
+  --shadow-lg: 0 8px 24px rgba(0, 0, 0, 0.13);
 }
 
 @theme {
@@ -111,7 +119,7 @@
   --color-sky: var(--sky);
   --color-sky-ink: var(--sky-ink);
   --color-sky-soft: var(--sky-soft);
-  
+
   --radius-card: 1.6rem;
   --radius-btn: 1.1rem;
 }
@@ -127,6 +135,13 @@
 
   body {
     background-color: var(--bg);
+    background-image:
+      radial-gradient(circle at 14% 0%, rgba(182, 255, 61, 0.05), transparent 46%),
+      radial-gradient(circle at 86% 18%, rgba(194, 75, 255, 0.05), transparent 42%),
+      linear-gradient(rgba(246, 247, 242, 0.035) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(246, 247, 242, 0.035) 1px, transparent 1px);
+    background-size: auto, auto, 34px 34px, 34px 34px;
+    background-position: 0 0, 0 0, -1px -1px, -1px -1px;
     color: var(--ink);
     font-family: var(--font-body);
     font-size: 15px;
@@ -135,6 +150,15 @@
     -webkit-tap-highlight-color: transparent;
     padding-bottom: env(safe-area-inset-bottom);
     transition: background-color 0.45s ease, color 0.45s ease;
+  }
+
+  [data-theme="light"] body {
+    background-image:
+      radial-gradient(circle at 14% 0%, rgba(98, 163, 0, 0.06), transparent 46%),
+      radial-gradient(circle at 86% 18%, rgba(154, 47, 214, 0.05), transparent 42%),
+      linear-gradient(rgba(20, 21, 15, 0.028) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(20, 21, 15, 0.028) 1px, transparent 1px);
+    background-size: auto, auto, 34px 34px, 34px 34px;
   }
 
   button {
@@ -207,6 +231,27 @@
     align-items: center;
     justify-content: center;
     border-radius: 14px;
+  }
+
+  /* signature portal gradient — spend it sparingly */
+  .portal-gradient {
+    background: linear-gradient(115deg, var(--portal-a), var(--portal-c) 52%, var(--portal-b));
+  }
+
+  /* torn-sticker badge — one meme accent per view, not a system */
+  .sticker {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    border: 1.5px dashed var(--line-strong);
+    border-radius: 999px;
+    padding: 5px 11px 5px 5px;
+    font-family: var(--font-mono);
+    font-size: 10.5px;
+    letter-spacing: 0.02em;
+    color: var(--ink-2);
+    background: var(--bg-soft);
+    transform: rotate(-2deg);
   }
 
   input[type="range"].ds-range {
@@ -327,10 +372,10 @@ html.theme-anim *::after {
 @keyframes ds-pulse {
   0%,
   100% {
-    box-shadow: 0 0 0 0 rgba(0, 208, 132, 0.35);
+    box-shadow: 0 0 0 0 rgba(182, 255, 61, 0.35);
   }
   60% {
-    box-shadow: 0 0 0 6px rgba(0, 208, 132, 0);
+    box-shadow: 0 0 0 6px rgba(182, 255, 61, 0);
   }
 }
 
@@ -357,5 +402,26 @@ html.theme-anim *::after {
 @keyframes ds-spin {
   to {
     transform: rotate(360deg);
+  }
+}
+
+/* portal loader */
+@keyframes ds-portal-spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+@keyframes ds-portal-spin-rev {
+  to {
+    transform: rotate(-360deg);
+  }
+}
+@keyframes ds-portal-flicker {
+  0%,
+  100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.82;
   }
 }
